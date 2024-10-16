@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/game_test.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
@@ -23,33 +24,121 @@ class HomeApp extends StatelessWidget {
     super.key,
   });
 
-  final ColorProfile colorProfile = strawberryFlavor;
+  final ColorProfile colorProfile = lightFlavor;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Onwards',
+      home: const HomePage(),
       routes: {
         // routes must be defined here to be used in the app
-        '/': (context) => HomePage(colorProfile: colorProfile,),
         '/fill-in-the-blank': (context) => FillInActivityScreen(colorProfile: colorProfile,),
         '/audio-playback': (context) => PlaybackActivityScreen(colorProfile: colorProfile),
         '/typing': (context) => TypeActivityScreen(colorProfile: colorProfile,),
         '/jumble': (context) => JumbleActivityScreen(colorProfile: colorProfile),
-        '/reading': (context) => ReadingActivityScreen(colorProfile: colorProfile),
-        '/test' : (context) => const ThemeService()
+        '/reading': (context) => ReadingActivityScreen(colorProfile: colorProfile)
       },
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({
-    super.key,
-    required this.colorProfile
-  });
+class HomePage extends StatefulWidget {
+  const HomePage ({super.key});
 
-  final ColorProfile colorProfile;
+  @override
+  HomePageState createState() => HomePageState();
+}
+
+class HomePageState extends State<HomePage> {
+  final Future<SharedPreferencesWithCache> _prefs =
+    SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{'counter'}
+      ));
+  late Future<int> _counter;
+  int _externalCounter = 0;
+
+  final maxThemes = 6;
+
+  ColorProfile currentProfile = lightFlavor;
+
+  Future<void> _loadTheme() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    int? themeIndex = (prefs.getInt('counter') ?? 0);
+
+    setState(() {
+      currentProfile = _getProfileByIndex(themeIndex);
+    });
+  }
+
+  ColorProfile _getProfileByIndex(int index) {
+    switch(index) {
+        case 0:
+          return lightFlavor;
+        case 1:
+          return darkFlavor;
+        case 2:
+          return plainFlavor;
+        case 3:
+          return mintFlavor;
+        case 4:
+          return strawberryFlavor;
+        case 5:
+          return bananaFlavor;
+        case 6:
+          return peanutFlavor;
+        default:
+          return lightFlavor;
+      }
+  }
+
+  Future<void> _incrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    if ((prefs.getInt('counter') ?? 0) >= maxThemes) {
+      return;
+    }
+    final int counter = (prefs.getInt('counter') ?? 0) + 1;
+    setState(() {
+      _counter = prefs.setInt('counter', counter).then((_) {
+        currentProfile = _getProfileByIndex(counter);
+        return counter;
+      });
+    });
+  }
+
+  Future<void> _decrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    if ((prefs.getInt('counter') ?? 0) <= 0) {
+      return;
+    }
+
+    final int counter = (prefs.getInt('counter') ?? 0) - 1;
+    setState(() {
+      _counter = prefs.setInt('counter', counter).then((_) {
+        currentProfile = _getProfileByIndex(counter);
+        return counter;
+      });
+    });
+  }
+
+  Future<void> _getExternalCounter() async {
+    final SharedPreferencesAsync prefs = SharedPreferencesAsync();
+    int? holder = (await prefs.getInt('externalCounter')) ?? 0;
+    setState(() {
+      _externalCounter = holder;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('counter') ?? 0;
+    });
+    _getExternalCounter();
+    _loadTheme();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,41 +193,69 @@ class HomePage extends StatelessWidget {
         title: "Type it Out",
         subtitle: "Difficulty: Challenging",
         styleMode: darkStyle,
-      ),
-      const GameCard(
-        imageAsset: AssetImage(
-          'assets/images/placeholder.png'
-        ),
-        gameRoute: '/test', 
-        keyId: 5,
-        title: "Test it Out",
-        subtitle: "Difficulty: N/A",
-        styleMode: darkStyle,
-      ),
+      )
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
-        backgroundColor: colorProfile.headerColor,
+        backgroundColor: currentProfile.headerColor,
       ),
       body: Container(
-        decoration: colorProfile.backBoxDecoration,
-        child: ListView(
-          key: const ValueKey('HomeListView'),
-          primary: true,
-          padding: const EdgeInsetsDirectional.only(
-            top: 90.0
-          ),
+        decoration: currentProfile.backBoxDecoration,
+        child: Column(
           children: [
-            _HomeItem(
-              child: DesktopCarousel(
-                height: minHeight, 
-                children: gameCards
+            SizedBox(
+              width: 900.0,
+              height: 500.0,
+              child: ListView(
+                key: const ValueKey('HomeListView'),
+                primary: true,
+                padding: const EdgeInsetsDirectional.only(
+                  top: 90.0
+                ),
+                children: [
+                  _HomeItem(
+                    child: DesktopCarousel(
+                      height: minHeight, 
+                      children: gameCards
+                    )
+                  )
+                ],
+              ),
+            ),
+            FutureBuilder<int>(
+              future: _counter, 
+              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.none:
+                  case ConnectionState.waiting:
+                    return const CircularProgressIndicator();
+                  case ConnectionState.active:
+                  case ConnectionState.done:
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return Text(
+                        'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
+                        'This should persist across restarts.',
+                      );
+                    }
+                }
+              }),
+              ElevatedButton(
+                onPressed: _incrementCounter,
+                child: const Icon(Icons.add),
+              ),
+              ElevatedButton(
+                onPressed: _decrementCounter, 
+                child: const Icon(Icons.remove)
+              ),
+              GameTestPage(
+                colorProfile: currentProfile
               )
-            )
           ],
-        ),
+        )
       )
     );
   }
@@ -167,7 +284,11 @@ class _HomeItem extends StatelessWidget {
 }
 
 class DesktopCarousel extends StatefulWidget {
-  const DesktopCarousel({super.key, required this.height, required this.children});
+  const DesktopCarousel({
+    super.key, 
+    required this.height, 
+    required this.children
+  });
 
   final double height;
   final List<Widget> children;
@@ -204,61 +325,73 @@ class DesktopCarouselState extends State<DesktopCarousel> {
       showNextButton = controller.offset < controller.position.maxScrollExtent;
     }
 
-    return(Align(
-        alignment: Alignment.center,
-        child: Container(
-          height: widget.height,
-          constraints: const BoxConstraints(maxWidth: homeWidth),
-          child: Stack(
-            children: [
-              const Text(
-                "Game Select: Select the Game you want to try",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold
-                ),
-                
+    return(Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          height: 300.0,
+          width: 550.0,
+          child: Align(
+            alignment: Alignment.center,
+            child: Container(
+              height: widget.height,
+              constraints: const BoxConstraints(maxWidth: homeWidth),
+              child: Stack(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 0.0),
+                    child: Text(
+                    "Game Select: Select the Game you want to try",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  ),
+                  ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: desktopPadding - desktopMargin,
+                    ),
+                    scrollDirection: Axis.horizontal,
+                    primary:  false,
+                    physics: const SnappingScrollPhysics(),
+                    controller: controller,
+                    itemExtent: itemWidth,
+                    itemCount: widget.children.length,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: widget.children[index],
+                    ),
+                  ),
+                  if (showPreviousButton)
+                    _DesktopPageButton(
+                      onTap: () {
+                        controller.animateTo(
+                          controller.offset - itemWidth, 
+                          duration: const Duration(milliseconds: 200), 
+                          curve: Curves.easeOut
+                        );
+                      },
+                    ),
+                  if (showNextButton)
+                    _DesktopPageButton(
+                      isEnd: true,
+                      onTap: () {
+                        controller.animateTo(
+                          controller.offset + itemWidth, 
+                          duration: const Duration(milliseconds: 200), 
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                    )
+                ],
               ),
-              ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: desktopPadding - desktopMargin,
-                ),
-                scrollDirection: Axis.horizontal,
-                primary:  false,
-                physics: const SnappingScrollPhysics(),
-                controller: controller,
-                itemExtent: itemWidth,
-                itemCount: widget.children.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: widget.children[index],
-                ),
-              ),
-              if (showPreviousButton)
-                _DesktopPageButton(
-                  onTap: () {
-                    controller.animateTo(
-                      controller.offset - itemWidth, 
-                      duration: const Duration(milliseconds: 200), 
-                      curve: Curves.easeOut
-                    );
-                  },
-                ),
-              if (showNextButton)
-                _DesktopPageButton(
-                  isEnd: true,
-                  onTap: () {
-                    controller.animateTo(
-                      controller.offset + itemWidth, 
-                      duration: const Duration(milliseconds: 200), 
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                )
-            ],
+            ),
           ),
         ),
-      )
+        
+      ],
+    )
     );
   }
 }
@@ -361,8 +494,8 @@ class GameCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    final asset = this.imageAsset;
-    final style = this.styleMode;
+    final asset = imageAsset;
+    final style = styleMode;
     final titleText = title;
     final subtitleText = subtitle;
 
@@ -392,18 +525,26 @@ class GameCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    titleText,
-                    maxLines: 3,
-                    overflow: TextOverflow.visible,
-                    style: style,
-                  ),
-                  Text(
-                    subtitleText,
-                    maxLines: 5,
-                    overflow: TextOverflow.visible,
-                    style: style,
-                  ),
+                  Container(
+                    width: 500.0,
+                    color: const Color.fromARGB(221, 124, 124, 124),
+                    child: Column(
+                      children: [
+                        Text(
+                          titleText,
+                          maxLines: 3,
+                          overflow: TextOverflow.visible,
+                          style: style,
+                        ),
+                        Text(
+                          subtitleText,
+                          maxLines: 5,
+                          overflow: TextOverflow.visible,
+                          style: style,
+                        ),
+                      ],
+                    ),
+                  )
                 ],
               ),
             ),
@@ -414,7 +555,7 @@ class GameCard extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context)
                     .popUntil((route) => route.settings.name == '/');
-                    Navigator.of(context).restorablePushNamed(gameRoute);
+                    Navigator.of(context).pushNamed(gameRoute, arguments: '0');
                   },
                 ),
               )
@@ -422,50 +563,6 @@ class GameCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// This will allow the user to select some theme from a menu
-class ThemeSelector extends StatelessWidget {
-  final ValueChanged<ColorProfile?> onProfileChanged;
-
-  const ThemeSelector({
-    super.key, 
-    required this.onProfileChanged
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButton(
-      hint: const Text('Select a Theme'),
-      items: const [
-        DropdownMenuItem(
-          value: plainFlavor,
-          child: Text('Plain Flavor')
-        ),
-        DropdownMenuItem(
-          value: mintFlavor,
-          child: Text('Mint Flavor')
-        ),
-        DropdownMenuItem(
-          value: strawberryFlavor,
-          child: Text('Strawberry Flavor')
-        ),
-        DropdownMenuItem(
-          value: bananaFlavor,
-          child: Text('Banana Flavor')
-        ),
-        DropdownMenuItem(
-          value: peanutFlavor,
-          child: Text('Peanut Flavor')
-        ),
-        DropdownMenuItem(
-          value: lightFlavor,
-          child: Text('Light Flavor')
-        )
-      ], 
-      onChanged: onProfileChanged,
     );
   }
 }
@@ -486,11 +583,52 @@ class ThemeServiceState extends State<ThemeService> {
   late Future<int> _counter;
   int _externalCounter = 0;
 
+  ColorProfile currentProfile = lightFlavor;
+
+  Future<void> _loadTheme() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    int? themeIndex = (prefs.getInt('counter') ?? 0);
+
+    setState(() {
+      currentProfile = _getProfileByIndex(themeIndex);
+    });
+  }
+
+  ColorProfile _getProfileByIndex(int index) {
+    switch(index) {
+        case 0:
+          return plainFlavor;
+        case 1:
+          return mintFlavor;
+        case 2:
+          return strawberryFlavor;
+        default:
+          return lightFlavor;
+      }
+  }
+
   Future<void> _incrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
+    if ((prefs.getInt('counter') ?? 0) >= 2)
+      return;
     final int counter = (prefs.getInt('counter') ?? 0) + 1;
     setState(() {
       _counter = prefs.setInt('counter', counter).then((_) {
+        currentProfile = _getProfileByIndex(counter);
+        return counter;
+      });
+    });
+  }
+
+  Future<void> _decrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    if ((prefs.getInt('counter') ?? 0) <= 0)
+      return;
+
+    final int counter = (prefs.getInt('counter') ?? 0) - 1;
+    setState(() {
+      _counter = prefs.setInt('counter', counter).then((_) {
+        currentProfile = _getProfileByIndex(counter);
         return counter;
       });
     });
@@ -498,8 +636,9 @@ class ThemeServiceState extends State<ThemeService> {
 
   Future<void> _getExternalCounter() async {
     final SharedPreferencesAsync prefs = SharedPreferencesAsync();
-    setState(() async {
-      _externalCounter = (await prefs.getInt('externalCounter')) ?? 0;
+    int? holder = (await prefs.getInt('externalCounter')) ?? 0;
+    setState(() {
+      _externalCounter = holder;
     });
   }
 
@@ -510,39 +649,56 @@ class ThemeServiceState extends State<ThemeService> {
       return prefs.getInt('counter') ?? 0;
     });
     _getExternalCounter();
+    _loadTheme();
   }
 
   @override
   Widget build(BuildContext context) {
+    
+    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Test???'),
       ),
-      body: Center(
-        child: FutureBuilder<int>(
-          future: _counter, 
-          builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.none:
-              case ConnectionState.waiting:
-                return const CircularProgressIndicator();
-              case ConnectionState.active:
-              case ConnectionState.done:
-                if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  return Text(
-                    'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
-                    'This should persist across restarts.',
-                  );
+      body: Container(
+        decoration: currentProfile.backBoxDecoration,
+        child: Align(
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FutureBuilder<int>(
+              future: _counter, 
+              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.none:
+                  case ConnectionState.waiting:
+                    return const CircularProgressIndicator();
+                  case ConnectionState.active:
+                  case ConnectionState.done:
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return Text(
+                        'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
+                        'This should persist across restarts.',
+                      );
+                    }
                 }
-            }
-          })),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+              }),
+              ElevatedButton(
+                onPressed: _incrementCounter,
+                child: const Icon(Icons.add),
+              ),
+              ElevatedButton(
+                onPressed: _decrementCounter, 
+                child: const Icon(Icons.remove)
+              )
+            ]
+          ),
+        ),
+      )
     );
   }
 }

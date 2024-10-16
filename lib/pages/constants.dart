@@ -33,7 +33,8 @@ const ColorProfile lightFlavor = ColorProfile(
       image: DecorationImage(
         image: AssetImage("/images/eb_blank_background.png"), 
         repeat: ImageRepeat.repeat,
-        scale: 0.4
+        scale: 0.4,
+        invertColors: true
       )
     ),
     backgroundImage: AssetImage("/images/eb_blank_background.png")

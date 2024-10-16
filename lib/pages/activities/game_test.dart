@@ -10,15 +10,20 @@ import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/constants.dart';
 
 class GameTestPage extends StatelessWidget {
-  const GameTestPage({super.key});
+  const GameTestPage({
+    super.key,
+    required this.colorProfile
+  });
+
+  final ColorProfile colorProfile;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
+    return Align(
       alignment: Alignment.center,
       child: HomePage(
         maxQuestCount: 10,
-        colorProfile: lightFlavor,
+        colorProfile: colorProfile,
       ),
     );
   }
