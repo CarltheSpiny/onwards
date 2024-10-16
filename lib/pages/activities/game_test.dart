@@ -1,0 +1,92 @@
+
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/fill_in_the_blank.dart';
+import 'package:onwards/pages/activities/jumble.dart';
+import 'package:onwards/pages/activities/playback/playback.dart';
+import 'package:onwards/pages/activities/reading/reading.dart';
+import 'package:onwards/pages/activities/typing.dart';
+import 'package:onwards/pages/constants.dart';
+
+class GameTestPage extends StatelessWidget {
+  const GameTestPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Align(
+      alignment: Alignment.center,
+      child: HomePage(
+        maxQuestCount: 10,
+        colorProfile: lightFlavor,
+      ),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+
+  final int maxQuestCount;
+  final ColorProfile colorProfile;
+
+  const HomePage({
+    super.key, 
+    required this.maxQuestCount,
+    required this.colorProfile
+  });
+  
+  @override
+  HomePageState createState() => HomePageState();
+}
+
+class HomePageState extends State<HomePage> {
+  List<Widget> pages = [];
+
+  List<int> selectedPageOrder = [];
+
+  void selectRandPages() {
+    final random = Random();
+    int randStartIndex = random.nextInt(pages.length);
+    selectedPageOrder.clear();
+
+    for (int i =0; i < widget.maxQuestCount; i++) {
+      int next = (randStartIndex + i) % pages.length;
+      selectedPageOrder.add(next);
+    }
+
+    print('Order for this session: $selectedPageOrder');
+  }
+
+  void navigateToNext(int currentIndex) {
+    if (currentIndex < selectedPageOrder.length) {
+      Navigator.push(
+        context, 
+        MaterialPageRoute(
+          builder: (context) => pages[selectedPageOrder[currentIndex]],
+        ),
+      ).then((_) {
+        navigateToNext(currentIndex + 1);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    pages.addAll(List.of([
+      FillInActivityScreen(colorProfile: widget.colorProfile),
+      JumbleActivityScreen(colorProfile: widget.colorProfile),
+      PlaybackActivityScreen(colorProfile: widget.colorProfile),
+      ReadingActivityScreen(colorProfile: widget.colorProfile),
+      TypeActivityScreen(colorProfile: widget.colorProfile,)
+    ]));
+    return Align(
+        alignment: Alignment.center,
+        child: ElevatedButton(
+          onPressed: () {
+            selectRandPages();
+            navigateToNext(0);
+          }, 
+          child: const Text("Start Series")),
+      );
+  }
+}
