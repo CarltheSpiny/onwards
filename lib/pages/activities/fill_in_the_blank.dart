@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/game_data.dart';
 
 /// The screen for the 'Fill in the Blank' game.
 /// Uses data in the form of GameData 
@@ -7,7 +8,7 @@ import 'package:onwards/pages/constants.dart';
 class FillInActivityScreen extends StatelessWidget {
   const FillInActivityScreen({
     super.key,
-    required this.colorProfile
+    this.colorProfile = plainFlavor
   });
 
   final ColorProfile colorProfile;
@@ -15,17 +16,18 @@ class FillInActivityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    const GameData data = GameData(
+    GameData data = GameData(
       arithmiticForm: '4 + 30 = 34', 
       acceptedAnswers: [
         "plus", "equals",
       ],
+      multiAcceptedAnswers: [],
       blankForm: 'Forty ____ thirty ____ thirty-four',
       maxAnswerCount: 2,
       optionList: ["plus", "minus", "times", "equals"]
     );
 
-    const dataList = <GameData> [
+    var dataList = <GameData> [
       data
     ];
 
@@ -335,22 +337,4 @@ class GameFormState extends State<GameForm> {
     );
     
   }
-}
-
-/// Fill in the blank needs the question to show with blanks, 
-/// the arithmitic form, and the answer blocks
-class GameData {
-  const GameData({
-    required this.arithmiticForm,
-    required this.acceptedAnswers,
-    required this.blankForm,
-    required this.maxAnswerCount,
-    required this.optionList
-  });
-
-  final String arithmiticForm;
-  final List<String> acceptedAnswers;
-  final String blankForm;
-  final int maxAnswerCount;
-  final List<String> optionList;
 }

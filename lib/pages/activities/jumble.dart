@@ -1,11 +1,14 @@
+
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/game_data.dart';
 
 import '../constants.dart';
 
 class JumbleActivityScreen extends StatelessWidget {
   const JumbleActivityScreen({
     super.key,
-    required this.colorProfile
+    this.colorProfile = lightFlavor
   });
 
   
@@ -13,9 +16,10 @@ class JumbleActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const GameData data = GameData(
-      arithmiticForm: '4 + 30 = 34', 
-      acceptedAnswers: [
+    GameData data = GameData(
+      arithmiticForm: '4 + 30 = 34',
+      acceptedAnswers: [],
+      multiAcceptedAnswers: [
         [
           "four", "plus", "thirty", "equals", "thirty-four"
         ]
@@ -26,6 +30,8 @@ class JumbleActivityScreen extends StatelessWidget {
       ]
     );
 
+    GameData randData = bank.getRandomElement();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Word Jumble Game'),
@@ -33,11 +39,11 @@ class JumbleActivityScreen extends StatelessWidget {
       ),
       body: Center(
         child: GameForm(
-          answers: data.acceptedAnswers, 
-          questionLabel: data.arithmiticForm, 
+          answers: randData.multiAcceptedAnswers, 
+          questionLabel: randData.arithmiticForm, 
           data: const <GameData> [], 
-          maxSelectedAnswers: data.maxAnswerCount, 
-          buttonOptions: data.optionList,
+          maxSelectedAnswers: randData.maxAnswerCount, 
+          buttonOptions: randData.optionList,
           titleQuestion: "Use the blocks below to form the written form of the expression:",
           showArithmitic: true,
           colorProfile: colorProfile,
@@ -85,6 +91,7 @@ class GameForm extends StatefulWidget {
 class GameFormState extends State<GameForm> {
 
   final List<String> _selectedAnswers = [];
+  final List<num> _selectedIds = [];
   int maxSelection = 0;
   int currentCount = 0;
 
@@ -135,8 +142,12 @@ class GameFormState extends State<GameForm> {
       ),
       TextButton(
         onPressed: () => {
-          Navigator.pop(context),
-          Navigator.pop(context),
+          Navigator.push(
+            context, 
+            MaterialPageRoute(
+              builder: (context) => JumbleActivityScreen(colorProfile: widget.colorProfile,)
+            )
+          )
         }, 
         child: const Text('Go back Home')
       ),
@@ -211,6 +222,7 @@ class GameFormState extends State<GameForm> {
             setState(() {
               if (currentCount < maxSelection) {
                 _selectedAnswers.add(option);
+
                 currentCount += 1;
               }
             }),
@@ -265,10 +277,12 @@ class GameFormState extends State<GameForm> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: dynamicButtonList,
-              ),
+              child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: dynamicButtonList,
+                ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -315,6 +329,7 @@ class GameButton extends StatefulWidget {
   final String label;
   final String disabledLabel;
   final ColorProfile colorProfile;
+  final int id;
 
   const GameButton({
     super.key, 
@@ -322,8 +337,13 @@ class GameButton extends StatefulWidget {
     required this.isDisabled,
     required this.label,
     this.disabledLabel = "",
+    this.id = 0,
     required this.colorProfile
     });
+
+    int getID() {
+      return id;
+    }
 
   @override
   GameButtonState createState() => GameButtonState();
@@ -382,25 +402,4 @@ class GameButtonState extends State<GameButton> {
       ),
     );
   }
-}
-
-/// Fill in the blank needs the question to show with blanks, 
-/// the arithmitic form, and the answer blocks
-class GameData {
-  const GameData({
-    required this.arithmiticForm,
-    required this.acceptedAnswers,
-    required this.maxAnswerCount,
-    required this.optionList
-  });
-
-  /// The form of the written expression with math symbols
-  final String arithmiticForm;
-  /// The list of lists that have answer combos tha are accepted.
-  /// The lists inside are matched exactly against the user's selection
-  final List<List<String>> acceptedAnswers;
-  /// The maximum number of selected buttons that are in the soloution
-  final int maxAnswerCount;
-  /// The options the user will use to make the answer
-  final List<String> optionList;
 }

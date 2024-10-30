@@ -213,18 +213,3 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     );
   }
 }
-
-/// Fill in the blank needs the question to show with blanks, 
-/// the arithmitic form, and the answer blocks
-class GameData {
-  const GameData({
-    required this.arithmiticForm,
-    required this.acceptedAnswers,
-  });
-
-  /// The form of the written expression with math symbols
-  final String arithmiticForm;
-  /// The list of lists that have answer combos tha are accepted.
-  /// The lists inside are matched exactly against the user's selection
-  final List<String> acceptedAnswers;
-}

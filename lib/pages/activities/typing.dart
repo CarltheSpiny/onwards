@@ -2,36 +2,43 @@
 
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/game_data.dart';
 
 class TypeActivityScreen extends StatelessWidget {
   const TypeActivityScreen({
     super.key,
-    required this.colorProfile
+    this.colorProfile = lightFlavor
   });
 
   final ColorProfile colorProfile;
 
   @override
   Widget build(BuildContext context) {
-    const GameData data = GameData(
+    GameData data = GameData(
       arithmiticForm: '4 + 30 = 34', 
       acceptedAnswers: [
         "four plus thirty equals thirty four", "four plus thirty equals thirty-four", "four plus thirty is thirty four",
-      ]
+      ],
+      multiAcceptedAnswers: [],
+      optionList: []
     );
 
     final dataList = <GameData> [
-      const GameData(
+      GameData(
         arithmiticForm: '4 + 30 = 34', 
         acceptedAnswers: [
           "thirty-four", "thirty four",
         ],
+      multiAcceptedAnswers: [],
+      optionList: []
       ),
-      const GameData(
+      GameData(
         arithmiticForm: '50 + 30 = 80', 
         acceptedAnswers: [
           "eighty",
         ],
+      multiAcceptedAnswers: [],
+      optionList: []
       ),
     ];
 
@@ -219,14 +226,3 @@ class _GameFormState extends State<GameForm> {
       ),
     );
   }}
-
-/// Creates the data that will be used in the typing game. In production, this will be fetched from a database.
-class GameData {
-  const GameData({
-    required this.arithmiticForm,
-    required this.acceptedAnswers
-  });
-
-  final String arithmiticForm;
-  final List<String> acceptedAnswers;
-}

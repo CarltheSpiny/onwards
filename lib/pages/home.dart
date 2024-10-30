@@ -31,14 +31,7 @@ class HomeApp extends StatelessWidget {
     return MaterialApp(
       title: 'Onwards',
       home: const HomePage(),
-      routes: {
-        // routes must be defined here to be used in the app
-        '/fill-in-the-blank': (context) => FillInActivityScreen(colorProfile: colorProfile,),
-        '/audio-playback': (context) => PlaybackActivityScreen(colorProfile: colorProfile),
-        '/typing': (context) => TypeActivityScreen(colorProfile: colorProfile,),
-        '/jumble': (context) => JumbleActivityScreen(colorProfile: colorProfile),
-        '/reading': (context) => ReadingActivityScreen(colorProfile: colorProfile)
-      },
+      
     );
   }
 }
@@ -143,52 +136,57 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
 
-    final gameCards = <Widget> [
-      const GameCard(
-        imageAsset: AssetImage(
+    List<Widget> gameCards = <Widget> [
+      GameCard(
+        imageAsset: const AssetImage(
           'assets/images/audio-playback-preview.png'
         ),
         gameRoute: "/audio-playback", 
+        gameWidget: PlaybackActivityScreen(colorProfile: currentProfile),
         keyId: 0,
         title: "Playback and Choose",
         subtitle: "Difficulty: Hard",
         styleMode: darkStyle,
       ),
-      const GameCard(
-        imageAsset: AssetImage(
+      GameCard(
+        imageAsset: const AssetImage(
           'assets/images/fill-in-the-blank-preview.png'
         ),
-        gameRoute: '/fill-in-the-blank', 
+        gameRoute: '/fill-in-the-blank',
+        gameWidget: FillInActivityScreen(colorProfile: currentProfile,), 
         keyId: 1,
         title: "Fill in the Blank",
         subtitle: "Difficulty: Easy",
         styleMode: darkStyle,
       ),
-      const GameCard(
-        imageAsset: AssetImage(
+      GameCard(
+        imageAsset: const AssetImage(
           'assets/images/jumble-preview.png'
         ),
-        gameRoute: '/jumble', 
+        gameRoute: '/jumble',
+        gameWidget: JumbleActivityScreen(colorProfile: currentProfile),
         keyId: 2,
         title: "Translate Jumble",
         subtitle: "Difficulty: Medium",
         styleMode: darkStyle,
       ),
-      const GameCard(
-        imageAsset: AssetImage(
+      GameCard(
+        imageAsset: const AssetImage(
           'assets/images/reading-preview.png'
         ),
         gameRoute: '/reading', 
+        gameWidget: ReadingActivityScreen(colorProfile: currentProfile),
         keyId: 3,
         title: "Read Aloud",
         subtitle: "Difficulty: Challenging",
         styleMode: darkStyle,
       ),
-      const GameCard(
-        imageAsset: AssetImage(
+      GameCard(
+        imageAsset: const AssetImage(
           'assets/images/type-preview.png'
         ),
         gameRoute: '/typing', 
+        gameWidget: TypeActivityScreen(colorProfile: currentProfile),
         keyId: 4,
         title: "Type it Out",
         subtitle: "Difficulty: Challenging",
@@ -475,11 +473,13 @@ class GameCard extends StatelessWidget {
     required this.gameRoute, 
     required this.keyId,
     this.imageAsset,
+    this.gameWidget = const FillInActivityScreen(colorProfile: plainFlavor),
     required this.title,
     required this.subtitle,
     required this.styleMode,
   });
 
+  final Widget gameWidget;
   final String gameRoute;
   final int? keyId;
   final ImageProvider? imageAsset;
@@ -553,9 +553,12 @@ class GameCard extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    Navigator.of(context)
-                    .popUntil((route) => route.settings.name == '/');
-                    Navigator.of(context).pushNamed(gameRoute, arguments: '0');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => gameWidget,
+                      ),
+                    );
                   },
                 ),
               )

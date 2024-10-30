@@ -5,24 +5,26 @@ import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/activities/playback/player_widget.dart';
+import 'package:onwards/pages/game_data.dart';
 
 class PlaybackActivityScreen extends StatelessWidget {
   const PlaybackActivityScreen(
     {super.key,
-    required this.colorProfile
+    this.colorProfile = lightFlavor
   });
 
   final ColorProfile colorProfile;
 
   @override
   Widget build(BuildContext context) {
-    const GameData data = GameData(
+    GameData data = GameData(
       arithmiticForm: '4 + 30 = 34', 
-      acceptedAnswers: [
+      acceptedAnswers: [],
+      multiAcceptedAnswers: [
         [
           "four", "plus", "thirty", "equals", "thirty-four"
         ]
-      ], 
+      ],
       maxAnswerCount: 5, 
       optionList: [
         "four", "plus", "thirty", "equals", "thirty-four"
@@ -43,7 +45,7 @@ class PlaybackActivityScreen extends StatelessWidget {
               colorProfile: colorProfile,
             ),
             GameForm(
-              answers: data.acceptedAnswers, 
+              answers: data.multiAcceptedAnswers, 
               questionLabel: "", 
               data: const <GameData> [], 
               maxSelectedAnswers: data.maxAnswerCount, 

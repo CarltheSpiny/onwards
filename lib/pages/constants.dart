@@ -18,7 +18,8 @@ const ColorProfile lightFlavor = ColorProfile(
         scale: 0.4
       )
     ),
-    backgroundImage: AssetImage("/images/eb_blank_background.png")
+    backgroundImage: AssetImage("/images/eb_blank_background.png"),
+    idKey: "light flavor"
   );
 
   const ColorProfile darkFlavor = ColorProfile(
@@ -37,7 +38,8 @@ const ColorProfile lightFlavor = ColorProfile(
         invertColors: true
       )
     ),
-    backgroundImage: AssetImage("/images/eb_blank_background.png")
+    backgroundImage: AssetImage("/images/eb_blank_background.png"),
+    idKey: "dark flavor"
   );
 
 const ColorProfile plainFlavor = ColorProfile(
@@ -55,7 +57,8 @@ const ColorProfile plainFlavor = ColorProfile(
         scale: 0.4
       )
     ),
-    backgroundImage: AssetImage("/images/eb_plain_background.png")
+    backgroundImage: AssetImage("/images/eb_plain_background.png"),
+    idKey: "plain flavor"
   );
 
 const ColorProfile mintFlavor = ColorProfile(
@@ -68,12 +71,12 @@ const ColorProfile mintFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_mint_background.png"), 
-        repeat: ImageRepeat.repeat,
-        scale: 0.4
+        image: AssetImage("/images/mint_flavor.png"),
+        fit: BoxFit.fitWidth
       )
     ),
-    backgroundImage: AssetImage("/images/eb_mint_background.png")
+    backgroundImage: AssetImage("/images/eb_mint_background.png"),
+    idKey: "mint flavor"
   );
 
 const ColorProfile strawberryFlavor = ColorProfile(
@@ -91,7 +94,8 @@ const ColorProfile strawberryFlavor = ColorProfile(
         scale: 0.4
       )
     ),
-    backgroundImage: AssetImage("/images/eb_strawberry_background.png")
+    backgroundImage: AssetImage("/images/eb_strawberry_background.png"),
+    idKey: "strawberry flavor"
   );
 
 const ColorProfile bananaFlavor = ColorProfile(
@@ -109,7 +113,8 @@ const ColorProfile bananaFlavor = ColorProfile(
         scale: 0.4
       )
     ),
-    backgroundImage: AssetImage("/images/eb_banana_background.png")
+    backgroundImage: AssetImage("/images/eb_banana_background.png"),
+    idKey: "banana flavor"
   );
 
 const ColorProfile peanutFlavor = ColorProfile(
@@ -127,7 +132,8 @@ const ColorProfile peanutFlavor = ColorProfile(
         scale: 0.4
       )
     ),
-    backgroundImage: AssetImage("/images/eb_nut_background.png")
+    backgroundImage: AssetImage("/images/eb_nut_background.png"),
+    idKey: "peanut flavor"
   );
 
 // Color profiles for the screens
@@ -143,8 +149,11 @@ class ColorProfile {
     required this.backBoxDecoration,
     required this.backgroundImage,
     this.disabledButtonColor = Colors.grey,
+    this.idKey = "color profile"
   });
 
+
+  final String idKey;
   final Color backgroundColor;
   final Color headerColor;
   final Color buttonColor;

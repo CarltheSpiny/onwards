@@ -8,6 +8,9 @@ import 'package:onwards/pages/activities/playback/playback.dart';
 import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/game_data.dart';
+
+GameDataBank bank = GameDataBank();
 
 class GameTestPage extends StatelessWidget {
   const GameTestPage({
@@ -19,6 +22,7 @@ class GameTestPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bank.initBank();
     return Align(
       alignment: Alignment.center,
       child: HomePage(
@@ -58,11 +62,12 @@ class HomePageState extends State<HomePage> {
       int next = (randStartIndex + i) % pages.length;
       selectedPageOrder.add(next);
     }
-
+    print('Color profile for this series: ${widget.colorProfile.idKey}');
     print('Order for this session: $selectedPageOrder');
   }
 
   void navigateToNext(int currentIndex) {
+    print("Profile for the next page is: ${widget.colorProfile.idKey}");
     if (currentIndex < selectedPageOrder.length) {
       Navigator.push(
         context, 
@@ -77,6 +82,7 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    print("This GameTest has a profile of: ${widget.colorProfile.idKey}");
     pages.addAll(List.of([
       FillInActivityScreen(colorProfile: widget.colorProfile),
       JumbleActivityScreen(colorProfile: widget.colorProfile),
