@@ -44,8 +44,8 @@ String convertNumberToWords(int number) {
   String convertChunk(int num) {
     if (num == 0) return '';
     if (num < 20) return belowTwenty[num];
-    if (num < 100) return tens[num ~/ 10] + (num % 10 != 0 ? ' ' + belowTwenty[num % 10] : '');
-    return belowTwenty[num ~/ 100] + ' hundred' + (num % 100 != 0 ? ' ' + convertChunk(num % 100) : '');
+    if (num < 100) return tens[num ~/ 10] + (num % 10 != 0 ? ' ${belowTwenty[num % 10]}' : '');
+    return '${belowTwenty[num ~/ 100]} hundred${num % 100 != 0 ? ' ${convertChunk(num % 100)}' : ''}';
   }
 
   String numberToWords(int num) {
@@ -56,7 +56,7 @@ String convertNumberToWords(int number) {
     
     while (num > 0) {
       if (num % 1000 != 0) {
-        words = convertChunk(num % 1000) + (thousands[i] != '' ? ' ' + thousands[i] : '') + (words.isNotEmpty ? ' ' + words : '');
+        words = convertChunk(num % 1000) + (thousands[i] != '' ? ' ${thousands[i]}' : '') + (words.isNotEmpty ? ' $words' : '');
       }
       num ~/= 1000;
       i++;

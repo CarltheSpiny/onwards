@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/game_test.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 
@@ -16,16 +17,7 @@ class FillInActivityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    GameData data = GameData(
-      arithmiticForm: '4 + 30 = 34', 
-      acceptedAnswers: [
-        "plus", "equals",
-      ],
-      multiAcceptedAnswers: [],
-      blankForm: 'Forty ____ thirty ____ thirty-four',
-      maxAnswerCount: 2,
-      optionList: ["plus", "minus", "times", "equals"]
-    );
+    GameData data = bank.getFillRandomElement();
 
     var dataList = <GameData> [
       data
@@ -95,6 +87,7 @@ class GameFormState extends State<GameForm> {
       for (int i = 0; i < _selectedAnswers.length; i++) {
         if (_selectedAnswers[i] != widget.answers[i]) {
           isCorrect = false;
+          print("Correct answer did not match at: ${widget.answers[i]}");
         }
       }
     } else {
@@ -110,14 +103,20 @@ class GameFormState extends State<GameForm> {
           Navigator.pop(context),
           Navigator.popAndPushNamed(context, "/fill-in-the-blank")
         }, 
-        child: const Text('Try Again')
+        child: Text('Try Again', 
+            style: TextStyle(
+                color: widget.colorProfile.textColor,
+              ),)
       ),
       TextButton(
         onPressed: () => {
           Navigator.pop(context),
           Navigator.pop(context),
         }, 
-        child: const Text('Go back Home')
+        child: Text('Go back Home', 
+            style: TextStyle(
+                color: widget.colorProfile.textColor,
+              ),)
       ),
     ];
 
@@ -127,9 +126,11 @@ class GameFormState extends State<GameForm> {
         builder: (context) {
           return AlertDialog(
             actions: answerDialogList,
-            
-            title: const Text('Way to go!'),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            title: Text('Way to go!', 
+            style: TextStyle(
+                color: widget.colorProfile.textColor,
+              ),),
+            backgroundColor: widget.colorProfile.headerColor,
           );
         }
       );
@@ -150,7 +151,7 @@ class GameFormState extends State<GameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.headerColor,
           );
         }
       );

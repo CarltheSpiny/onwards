@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:onwards/pages/activities/game_test.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/activities/reading/reading.dart';
@@ -15,9 +16,11 @@ const desktopPadding = 81.0;
 const homeWidth = 1400.0;
 const desktopMargin = 8.0;
 
+
 // Image is currently 4:3 ratio
 const itemWidth = 396.0; // controls the width of the card (should match image)
 const minHeight = 340.0; // controls the height of the card (should match image)
+var logger = Logger();
 
 class HomeApp extends StatelessWidget {
   const HomeApp({
@@ -28,10 +31,10 @@ class HomeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    logger.i('Loading app...');
+    return const MaterialApp(
       title: 'Onwards',
-      home: const HomePage(),
-      
+      home: HomePage(),
     );
   }
 }
@@ -94,6 +97,7 @@ class HomePageState extends State<HomePage> {
     final int counter = (prefs.getInt('counter') ?? 0) + 1;
     setState(() {
       _counter = prefs.setInt('counter', counter).then((_) {
+        logger.i('Updating theme...');
         currentProfile = _getProfileByIndex(counter);
         return counter;
       });
@@ -109,6 +113,7 @@ class HomePageState extends State<HomePage> {
     final int counter = (prefs.getInt('counter') ?? 0) - 1;
     setState(() {
       _counter = prefs.setInt('counter', counter).then((_) {
+        logger.i('Updating theme...');
         currentProfile = _getProfileByIndex(counter);
         return counter;
       });
@@ -215,8 +220,9 @@ class HomePageState extends State<HomePage> {
                 children: [
                   _HomeItem(
                     child: DesktopCarousel(
-                      height: minHeight, 
-                      children: gameCards
+                      height: minHeight,
+                      colorProfile: currentProfile, 
+                      children: gameCards,
                     )
                   )
                 ],
@@ -232,11 +238,11 @@ class HomePageState extends State<HomePage> {
                   case ConnectionState.active:
                   case ConnectionState.done:
                     if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
+                      return Text('Error: ${snapshot.error}', style: TextStyle(color: currentProfile.textColor));
                     } else {
                       return Text(
                         'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
-                        'This should persist across restarts.',
+                        'This should persist across restarts.', style: TextStyle(color: currentProfile.textColor)
                       );
                     }
                 }
@@ -251,11 +257,12 @@ class HomePageState extends State<HomePage> {
               ),
               GameTestPage(
                 colorProfile: currentProfile
-              )
-          ],
+              ),
+              const OverlayWidget()
+            ],
+          )
         )
-      )
-    );
+      );
   }
 }
 
@@ -285,11 +292,13 @@ class DesktopCarousel extends StatefulWidget {
   const DesktopCarousel({
     super.key, 
     required this.height, 
-    required this.children
+    required this.children,
+    this.colorProfile = plainFlavor
   });
 
   final double height;
   final List<Widget> children;
+  final ColorProfile colorProfile;
 
   @override
   DesktopCarouselState createState() => DesktopCarouselState();
@@ -336,13 +345,14 @@ class DesktopCarouselState extends State<DesktopCarousel> {
               constraints: const BoxConstraints(maxWidth: homeWidth),
               child: Stack(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 0.0),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 0.0),
                     child: Text(
                     "Game Select: Select the Game you want to try",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: widget.colorProfile.textColor
                     ),
                   ),
                   ),
@@ -570,138 +580,116 @@ class GameCard extends StatelessWidget {
   }
 }
 
-class ThemeService extends StatefulWidget {
-  const ThemeService({super.key});
+class OverlayWidget extends StatefulWidget {
+  const OverlayWidget({super.key});
 
   @override
-  ThemeServiceState createState() => ThemeServiceState();
+  State<OverlayWidget> createState() => _OverlayWidgetState();
 }
 
-class ThemeServiceState extends State<ThemeService> {
-  final Future<SharedPreferencesWithCache> _prefs =
-    SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'counter'}
-      ));
-  late Future<int> _counter;
-  int _externalCounter = 0;
+class _OverlayWidgetState extends State<OverlayWidget> {
+  OverlayEntry? entry;
 
-  ColorProfile currentProfile = lightFlavor;
-
-  Future<void> _loadTheme() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    int? themeIndex = (prefs.getInt('counter') ?? 0);
-
-    setState(() {
-      currentProfile = _getProfileByIndex(themeIndex);
-    });
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        displayOverlay();
+      },
+      child: const Text('Press Me'),
+    );
   }
 
-  ColorProfile _getProfileByIndex(int index) {
-    switch(index) {
-        case 0:
-          return plainFlavor;
-        case 1:
-          return mintFlavor;
-        case 2:
-          return strawberryFlavor;
-        default:
-          return lightFlavor;
-      }
+  void displayOverlay() {
+    WidgetsBinding.instance!.addPostFrameCallback((_) => showOverlay());
   }
 
-  Future<void> _incrementCounter() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    if ((prefs.getInt('counter') ?? 0) >= 2)
-      return;
-    final int counter = (prefs.getInt('counter') ?? 0) + 1;
-    setState(() {
-      _counter = prefs.setInt('counter', counter).then((_) {
-        currentProfile = _getProfileByIndex(counter);
-        return counter;
-      });
-    });
+  void hideOverlay() {
+    entry?.remove();
+    entry = null;
   }
 
-  Future<void> _decrementCounter() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    if ((prefs.getInt('counter') ?? 0) <= 0)
-      return;
+  void showOverlay() {
+    entry = OverlayEntry(
+      builder: (context) => OverlayBanner(
+        onBannerDismissed: () {
+          hideOverlay();
+        },
+      ),
+    );
 
-    final int counter = (prefs.getInt('counter') ?? 0) - 1;
-    setState(() {
-      _counter = prefs.setInt('counter', counter).then((_) {
-        currentProfile = _getProfileByIndex(counter);
-        return counter;
-      });
-    });
+    final overlay = Overlay.of(context)!;
+    overlay.insert(entry!);
   }
+}
 
-  Future<void> _getExternalCounter() async {
-    final SharedPreferencesAsync prefs = SharedPreferencesAsync();
-    int? holder = (await prefs.getInt('externalCounter')) ?? 0;
-    setState(() {
-      _externalCounter = holder;
-    });
-  }
+class OverlayBanner extends StatefulWidget {
+  const OverlayBanner({Key? key, this.onBannerDismissed}) : super(key: key);
+
+  final VoidCallback? onBannerDismissed;
+
+  @override
+  State<OverlayBanner> createState() => _OverlayBannerState();
+}
+
+class _OverlayBannerState extends State<OverlayBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  static const Curve curve = Curves.easeOut;
 
   @override
   void initState() {
     super.initState();
-    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('counter') ?? 0;
-    });
-    _getExternalCounter();
-    _loadTheme();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _playAnimation();
   }
 
   @override
   Widget build(BuildContext context) {
-    
-    
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Test???'),
-      ),
-      body: Container(
-        decoration: currentProfile.backBoxDecoration,
-        child: Align(
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FutureBuilder<int>(
-              future: _counter, 
-              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.none:
-                  case ConnectionState.waiting:
-                    return const CircularProgressIndicator();
-                  case ConnectionState.active:
-                  case ConnectionState.done:
-                    if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else {
-                      return Text(
-                        'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
-                        'This should persist across restarts.',
-                      );
-                    }
-                }
-              }),
-              ElevatedButton(
-                onPressed: _incrementCounter,
-                child: const Icon(Icons.add),
-              ),
-              ElevatedButton(
-                onPressed: _decrementCounter, 
-                child: const Icon(Icons.remove)
-              )
-            ]
+    return AnimatedBuilder(
+      builder: (context, child) {
+        final double animationValue = curve.transform(_controller.value);
+        return FractionalTranslation(
+          translation: Offset(0, -(1 - animationValue)),
+          child: child,
+        );
+      },
+      animation: _controller,
+      child: SingleChildScrollView(
+        child: Container(
+          width: double.infinity,
+          height: 400,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("/images/correct_overlay.png"),
+              fit: BoxFit.fitHeight
+            ),
           ),
         ),
-      )
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _playAnimation() async {
+    // fist will show banner with forward.
+    await _controller.forward();
+    // wait for 3 second and then play reverse animation to hide the banner
+    // Duration can be passed as parameter, banner will wait this much and then will dismiss
+    await Future<void>.delayed(const Duration(seconds: 3));
+    await _controller.reverse(from: 1);
+    // call onDismissedCallback so OverlayWidget can remove and clear the OverlayEntry.
+    widget.onBannerDismissed?.call();
   }
 }

@@ -8,7 +8,7 @@ const ColorProfile lightFlavor = ColorProfile(
     headerColor: Color.fromARGB(255, 210, 210, 210),
     buttonColor: Colors.grey, 
     textColor: Colors.black,
-    contrastTextColor: Colors.white,
+    contrastTextColor: Colors.black,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
@@ -24,10 +24,10 @@ const ColorProfile lightFlavor = ColorProfile(
 
   const ColorProfile darkFlavor = ColorProfile(
     backgroundColor: Color.fromARGB(255, 0, 0, 0),
-    headerColor: Color.fromARGB(255, 210, 210, 210),
+    headerColor: Color.fromARGB(255, 112, 112, 112),
     buttonColor: Colors.grey, 
-    textColor: Colors.black,
-    contrastTextColor: Colors.white,
+    textColor: Color.fromARGB(255, 255, 255, 255),
+    contrastTextColor: Color.fromARGB(255, 255, 251, 0),
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
@@ -36,7 +36,8 @@ const ColorProfile lightFlavor = ColorProfile(
         repeat: ImageRepeat.repeat,
         scale: 0.4,
         invertColors: true
-      )
+      ),
+      color: Color.fromARGB(255, 0, 0, 0),
     ),
     backgroundImage: AssetImage("/images/eb_blank_background.png"),
     idKey: "dark flavor"
@@ -47,7 +48,7 @@ const ColorProfile plainFlavor = ColorProfile(
     headerColor: Color.fromARGB(255, 210, 210, 210),
     buttonColor: Colors.grey, 
     textColor: Colors.black,
-    contrastTextColor: Colors.white,
+    contrastTextColor: Colors.black,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
@@ -55,14 +56,15 @@ const ColorProfile plainFlavor = ColorProfile(
         image: AssetImage("/images/eb_plain_background.png"), 
         repeat: ImageRepeat.repeat,
         scale: 0.4
-      )
+      ),
+      color: Colors.white
     ),
     backgroundImage: AssetImage("/images/eb_plain_background.png"),
     idKey: "plain flavor"
   );
 
 const ColorProfile mintFlavor = ColorProfile(
-    backgroundColor: Colors.white,
+    backgroundColor: Color.fromARGB(255, 18, 165, 170),
     headerColor: Color.fromARGB(255, 60, 144, 163),
     buttonColor: Color.fromARGB(255, 38, 171, 171), 
     textColor: Colors.black,
@@ -73,7 +75,8 @@ const ColorProfile mintFlavor = ColorProfile(
       image: DecorationImage(
         image: AssetImage("/images/mint_flavor.png"),
         fit: BoxFit.fitWidth
-      )
+      ),
+      color: Color.fromARGB(255, 18, 165, 170),
     ),
     backgroundImage: AssetImage("/images/eb_mint_background.png"),
     idKey: "mint flavor"
@@ -92,7 +95,8 @@ const ColorProfile strawberryFlavor = ColorProfile(
         image: AssetImage("/images/eb_strawberry_background.png"), 
         repeat: ImageRepeat.repeat,
         scale: 0.4
-      )
+      ),
+      color: Color.fromARGB(255, 197, 81, 187),
     ),
     backgroundImage: AssetImage("/images/eb_strawberry_background.png"),
     idKey: "strawberry flavor"
@@ -111,7 +115,8 @@ const ColorProfile bananaFlavor = ColorProfile(
         image: AssetImage("/images/eb_banana_background.png"), 
         repeat: ImageRepeat.repeat,
         scale: 0.4
-      )
+      ),
+      color: Color.fromARGB(255, 255, 251, 0),
     ),
     backgroundImage: AssetImage("/images/eb_banana_background.png"),
     idKey: "banana flavor"
@@ -130,7 +135,8 @@ const ColorProfile peanutFlavor = ColorProfile(
         image: AssetImage("/images/eb_nut_background.png"), 
         repeat: ImageRepeat.repeat,
         scale: 0.4
-      )
+      ),
+      color: Color.fromARGB(255, 168, 98, 79),
     ),
     backgroundImage: AssetImage("/images/eb_nut_background.png"),
     idKey: "peanut flavor"

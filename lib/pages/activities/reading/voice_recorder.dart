@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/reading/reading.dart';
+import 'package:onwards/pages/activities/reading/speech_to_text_helper.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/home.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class AudioTranscriptionWidget extends StatefulWidget {
@@ -8,13 +11,15 @@ class AudioTranscriptionWidget extends StatefulWidget {
     required this.acceptedAnswers,
     required this.questionLabel,
     required this.titleText,
-    required this.colorProfile
+    required this.colorProfile,
+    this.useNumWordProtocol = true
   });
 
   final ColorProfile colorProfile;
   final String questionLabel;
-  final List<String> acceptedAnswers;
+  final List<List<String>> acceptedAnswers;
   final String titleText;
+  final bool useNumWordProtocol;
 
   @override
   AudioTranscriptionWidgetState createState() => AudioTranscriptionWidgetState();
@@ -33,15 +38,20 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   }
 
   void _listen() async {
+    // we get here from the microphone button
+
     if (!_isListening) {
       bool available = await _speech.initialize(
-        onStatus: (val) => print('onStatus: $val'),
-        onError: (val) => print('onError: $val'),
+        onStatus: (val) => logger.i('onStatus: $val'),
+        onError: (val) => logger.e('onError: $val'),
       );
-      if (available) {
+      if (available && mounted) {
         setState(() => _isListening = true);
         _speech.listen(onResult: (val) => setState(() {
           _transcribedText = val.recognizedWords;
+          if (widget.useNumWordProtocol) {
+            _transcribedText = convertNumbersAndSymbolsToWords(_transcribedText);
+          }
         }));
       } else {
         setState(() => _isListening = false);
@@ -56,12 +66,16 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   bool _validate() {
     bool isCorrect = true;
 
-    for (String answer in widget.acceptedAnswers) {
-      if (!(answer.toLowerCase().contains(_transcribedText.toLowerCase()))) {
-        isCorrect = false;
-      } else {
-        isCorrect = true;
-        break;
+    for (List<String> answerList in widget.acceptedAnswers) {
+      for (String answer in answerList) {
+        if (!(answer.toLowerCase().contains(_transcribedText.toLowerCase()))) {
+          logger.i("Could not find a match in one of the answers");
+          isCorrect = false;
+        } else {
+          logger.i("Found one match in one of the answers");
+          isCorrect = true;
+          return isCorrect;
+        }
       }
     }
 
@@ -80,15 +94,25 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
-          Navigator.pop(context),
-          Navigator.popAndPushNamed(context, "/jumble")
+          setState(() => _isListening = false),
+          _speech.stop(),
+          Navigator.pop(context), // dialog
+          Navigator.pop(context), // page
+          Navigator.push(
+            context, 
+            MaterialPageRoute(
+              builder: (context) => ReadingActivityScreen(colorProfile: widget.colorProfile,)
+            )
+          )
         }, 
         child: const Text('Try Again')
       ),
       TextButton(
         onPressed: () => {
+          setState(() => _isListening = false),
+          _speech.stop(),
           Navigator.pop(context),
-          Navigator.popAndPushNamed(context, "/")
+          Navigator.pop(context)
         }, 
         child: const Text('Go back Home')
       ),
@@ -100,7 +124,10 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
         builder: (context) {
           return AlertDialog(
             actions: answerDialogList,
-            title: const Text('Way to go!'),
+            title:  Text('Way to go!',
+              style: TextStyle(
+                color: widget.colorProfile.textColor
+              ),),
             backgroundColor: widget.colorProfile.backgroundColor,
           );
         }

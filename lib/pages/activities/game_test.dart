@@ -22,7 +22,7 @@ class GameTestPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bank.initBank();
+    bank.initBanks();
     return Align(
       alignment: Alignment.center,
       child: HomePage(

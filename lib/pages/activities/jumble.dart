@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/game_test.dart';
 import 'package:onwards/pages/game_data.dart';
+import 'package:onwards/pages/home.dart';
 
 import '../constants.dart';
 
@@ -16,21 +17,9 @@ class JumbleActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    GameData data = GameData(
-      arithmiticForm: '4 + 30 = 34',
-      acceptedAnswers: [],
-      multiAcceptedAnswers: [
-        [
-          "four", "plus", "thirty", "equals", "thirty-four"
-        ]
-      ],
-      maxAnswerCount: 5,
-      optionList: [
-        "four", "plus", "thirty", "equals", "thirty-four"
-      ]
-    );
 
-    GameData randData = bank.getRandomElement();
+    bank.getRandomDefaultElement();
+    JumbleGameData jumbleGameData = bank.getRandomJumbleElement();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,12 +28,11 @@ class JumbleActivityScreen extends StatelessWidget {
       ),
       body: Center(
         child: GameForm(
-          answers: randData.multiAcceptedAnswers, 
-          questionLabel: randData.arithmiticForm, 
-          data: const <GameData> [], 
-          maxSelectedAnswers: randData.maxAnswerCount, 
-          buttonOptions: randData.optionList,
-          titleQuestion: "Use the blocks below to form the written form of the expression:",
+          answers: jumbleGameData.multiAcceptedAnswers, 
+          questionLabel: jumbleGameData.displayedProblem, 
+          maxSelectedAnswers: jumbleGameData.getMinSelection(), 
+          buttonOptions: jumbleGameData.optionList,
+          titleQuestion: jumbleGameData.writtenPrompt,
           showArithmitic: true,
           colorProfile: colorProfile,
         ),
@@ -62,7 +50,6 @@ class GameForm extends StatefulWidget {
     super.key,
     required this.answers, 
     required this.questionLabel,
-    required this.data,
     required this.maxSelectedAnswers,
     required this.buttonOptions,
     required this.titleQuestion,
@@ -75,8 +62,6 @@ class GameForm extends StatefulWidget {
   final String questionLabel;
   /// The list of combos accepted as answers
   final List<List<String>> answers;
-  /// Game data with multiple questions
-  final List<GameData> data;
   /// The number of max soloutions in the correct answer
   final int maxSelectedAnswers;
   /// the text for the buttons that can be used to create this phrase
@@ -91,7 +76,6 @@ class GameForm extends StatefulWidget {
 class GameFormState extends State<GameForm> {
 
   final List<String> _selectedAnswers = [];
-  final List<num> _selectedIds = [];
   int maxSelection = 0;
   int currentCount = 0;
 
@@ -100,7 +84,7 @@ class GameFormState extends State<GameForm> {
     maxSelection = widget.maxSelectedAnswers;
     super.initState();
   }
-
+  /// Validate the current selection against the multiple answers
   int validateAnswer() {
     int errorIndex = 0;
     bool isCorrect = true;
@@ -108,17 +92,27 @@ class GameFormState extends State<GameForm> {
       for (List<String> answerList in widget.answers) {
         for (int i = 0; i < answerList.length; i++) {
           if (_selectedAnswers[i] != answerList[i]) {
+            logger.d("Validating Answer: Expected ${answerList[i]}");
             isCorrect = false;
             errorIndex = i;
-            return errorIndex;
+          } else {
+            // in the case that there are multiple answers, we need to see if the other ones (besides the first) are correct
+            // instead of failing on the first
+            logger.d("Validating Answer: Another answer matched the current assortment");
+            isCorrect = true;
           }
         }
-
+        
+        // when we are done going through one answer, if its correct, just skip checking the rest
         if (isCorrect) {
+          logger.i("Not enough answers are selected, could not validate");
           return -1;
+        } else {
+          return errorIndex;
         }
       }
     } else {
+      logger.d("Not enough answers are selected, could not validate");
       return 0;
     }
     return 0;
@@ -127,6 +121,7 @@ class GameFormState extends State<GameForm> {
   void clearAnswers() {
     setState(() {
       currentCount = 0;
+      logger.d("Cleared answer selection");
       _selectedAnswers.clear();
     });
   }
@@ -135,13 +130,8 @@ class GameFormState extends State<GameForm> {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
-          Navigator.pop(context),
-          Navigator.popAndPushNamed(context, "/jumble")
-        }, 
-        child: const Text('Try Again')
-      ),
-      TextButton(
-        onPressed: () => {
+          Navigator.pop(context), // dialog
+          Navigator.pop(context), // page
           Navigator.push(
             context, 
             MaterialPageRoute(
@@ -149,23 +139,84 @@ class GameFormState extends State<GameForm> {
             )
           )
         }, 
+        child: const Text('Try Again')
+      ),
+      TextButton(
+        onPressed: () => {
+          Navigator.pop(context),
+          Navigator.pop(context)
+        }, 
         child: const Text('Go back Home')
       ),
     ];
 
+   // show an error dialog if the selected answers are empty (obselete)
+    if (_selectedAnswers.isEmpty) {
+      return showDialog(
+        context: context, 
+        builder: (context) {
+          return AlertDialog(
+            content: Text(
+              "Select more options",
+              style: TextStyle(
+                color: widget.colorProfile.textColor
+              ),
+            ),
+            title: Text(
+              'Incomplete Answer',
+              style: TextStyle(
+                color: widget.colorProfile.textColor
+              ),
+            ),
+            backgroundColor: widget.colorProfile.buttonColor,
+          );
+        }
+      );
+    } 
+    // get the error index if any. if 0, there was some error. If -1, the answer is correct
     int errorIndex = validateAnswer();
+    
     if (errorIndex == -1) {
+      // Show dialog with correct answer
       return showDialog(
         context: context, 
         builder: (context) {
           return AlertDialog(
             actions: answerDialogList,
-            title: const Text('Way to go!'),
+            title: Text('Way to go!',
+              style: TextStyle(
+                color: widget.colorProfile.textColor
+              ),
+            ),
             backgroundColor: widget.colorProfile.backgroundColor,
           );
         }
       );
+    } else if (errorIndex == 0) {
+      // Show dialog with error message on too few selected answers
+      return showDialog(
+        context: context, 
+        builder: (context) {
+          return AlertDialog(
+            content: Text(
+              "Please select more answers",
+              style: TextStyle(
+                color: widget.colorProfile.textColor
+              ),
+            ),
+            title: Text(
+              'Incomplete Answer',
+              style: TextStyle(
+                color: widget.colorProfile.textColor
+              ),
+            ),
+            backgroundColor: widget.colorProfile.backgroundColor,
+          );
+        }
+      );
+    
     } else {
+      // Show dialog with location of error
       return showDialog(
         context: context, 
         builder: (context) {
@@ -177,7 +228,7 @@ class GameFormState extends State<GameForm> {
               ),
             ),
             title: Text(
-              'Try again...',
+              'Try again',
               style: TextStyle(
                 color: widget.colorProfile.textColor
               ),
@@ -189,6 +240,7 @@ class GameFormState extends State<GameForm> {
     }
   }
 
+  // create a list of widgets that represents the selected button choices
   List<Widget> renderConditionalLabels() {
     List<Widget> widgets =[];
 
@@ -222,7 +274,7 @@ class GameFormState extends State<GameForm> {
             setState(() {
               if (currentCount < maxSelection) {
                 _selectedAnswers.add(option);
-
+                // _selectedIds.add(id);
                 currentCount += 1;
               }
             }),
@@ -288,7 +340,7 @@ class GameFormState extends State<GameForm> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: _showCorrectDialog, 
+                  onPressed: _selectedAnswers.isEmpty ? null : _showCorrectDialog, 
                   style: ButtonStyle(
                     backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
                   ),

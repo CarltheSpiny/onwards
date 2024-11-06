@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/game_test.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/activities/reading/voice_recorder.dart';
 import 'package:onwards/pages/game_data.dart';
@@ -15,17 +16,7 @@ class ReadingActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    GameData data = GameData(
-      arithmiticForm: '4 + 30 = 34', 
-      acceptedAnswers: [
-        "four plus thrity equals thirty four",
-        "four plus thirty is thirty four",
-        "4 + 30 = 34",
-        "4 + 30 is 34"
-      ],
-      multiAcceptedAnswers: [],
-      optionList: []
-    );
+    ReadAloudGameData readingData = bank.getRandomReadingElement();
 
     return Scaffold(
       appBar: AppBar(
@@ -38,9 +29,10 @@ class ReadingActivityScreen extends StatelessWidget {
           children: [
               AudioTranscriptionWidget(
               key: const Key('1'),
-              acceptedAnswers: data.acceptedAnswers,
-              questionLabel: data.arithmiticForm,
-              titleText: "Read the expression below",
+              acceptedAnswers: readingData.multiAcceptedAnswers,
+              questionLabel: readingData.displayedProblem,
+              titleText: readingData.writtenPrompt,
+              useNumWordProtocol: readingData.useNumWordProtocol,
               colorProfile: colorProfile,
             )
           ]
