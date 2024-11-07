@@ -17,11 +17,7 @@ class FillInActivityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    GameData data = bank.getFillRandomElement();
-
-    var dataList = <GameData> [
-      data
-    ];
+    FillBlanksGameData fillBlanksGameData = bank.getRandomFillBlanksElement();
 
     return Scaffold(
       appBar: AppBar(
@@ -29,12 +25,11 @@ class FillInActivityScreen extends StatelessWidget {
         backgroundColor: colorProfile.headerColor,
       ),
       body: GameForm(
-        answers: data.acceptedAnswers, 
-        questionLabel: data.arithmiticForm, 
-        data: dataList, 
-        blankQuestLabel: data.blankForm,
-        maxSelectedAnswers: data.maxAnswerCount,
-        buttonOptions: data.optionList,
+        answers: fillBlanksGameData.multiAcceptedAnswers, 
+        questionLabel: fillBlanksGameData.displayedProblem,  
+        blankQuestLabel: fillBlanksGameData.blankForm,
+        maxSelectedAnswers: fillBlanksGameData.getMinSelection(),
+        buttonOptions: fillBlanksGameData.optionList,
         colorProfile: colorProfile,
       ),
     );
@@ -50,7 +45,6 @@ class GameForm extends StatefulWidget {
     super.key,
     required this.answers, 
     required this.questionLabel,
-    required this.data,
     required this.blankQuestLabel,
     required this.maxSelectedAnswers,
     required this.buttonOptions,
@@ -60,7 +54,6 @@ class GameForm extends StatefulWidget {
   final ColorProfile colorProfile;
   final String questionLabel;
   final List<String> answers;
-  final List<GameData> data;
   final String blankQuestLabel;
   final int maxSelectedAnswers;
   final List<String> buttonOptions;
@@ -71,7 +64,7 @@ class GameForm extends StatefulWidget {
 
 class GameFormState extends State<GameForm> {
 
-  List<String> _selectedAnswers = [];
+  final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
 

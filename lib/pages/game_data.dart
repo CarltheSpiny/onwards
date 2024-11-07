@@ -100,13 +100,16 @@ class FillBlanksGameData {
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
     required this.writtenPrompt,
-    required this.blankForm
+    required this.blankForm,
+    required this.optionList
+    
   });
   
   final String displayedProblem;
-  final List<List<String>> multiAcceptedAnswers;
+  final List<String> multiAcceptedAnswers;
   final String writtenPrompt;
   final String blankForm;
+  final List<String> optionList;
 
   int getMinSelection() {
     return multiAcceptedAnswers[0].length;
@@ -371,9 +374,12 @@ class GameDataBank {
     fillBlanksBank.add(
       FillBlanksGameData(
         displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
-        multiAcceptedAnswers: [["forty"]], 
+        multiAcceptedAnswers: ["forty"], 
         writtenPrompt: 'Use the options below to answer the word problem.', 
-        blankForm: "Sally's mother is  ____ years old"
+        blankForm: "Sally's mother is  ____ years old", 
+        optionList: [
+          "eight", "five", "forty", "thrity-two", "forty-eight"
+        ]
       )
     );
   }
