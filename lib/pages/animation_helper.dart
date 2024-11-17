@@ -10,18 +10,18 @@ class OverlayWidget extends StatefulWidget {
 class _OverlayWidgetState extends State<OverlayWidget> {
   OverlayEntry? entry;
 
+  void alt() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => showOverlay());
+  }
+
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
-        displayOverlay();
+        alt();
       },
       child: const Text('Press Me'),
     );
-  }
-
-  void displayOverlay() {
-    WidgetsBinding.instance!.addPostFrameCallback((_) => showOverlay());
   }
 
   void hideOverlay() {
@@ -44,7 +44,7 @@ class _OverlayWidgetState extends State<OverlayWidget> {
 }
 
 class OverlayBanner extends StatefulWidget {
-  const OverlayBanner({Key? key, this.onBannerDismissed}) : super(key: key);
+  const OverlayBanner({super.key, this.onBannerDismissed});
 
   final VoidCallback? onBannerDismissed;
 
@@ -84,7 +84,7 @@ class _OverlayBannerState extends State<OverlayBanner>
       child: SingleChildScrollView(
         child: Container(
           width: double.infinity,
-          height: 400,
+          height: 200,
           decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage("/images/correct_overlay.png"),
@@ -107,7 +107,7 @@ class _OverlayBannerState extends State<OverlayBanner>
     await _controller.forward();
     // wait for 3 second and then play reverse animation to hide the banner
     // Duration can be passed as parameter, banner will wait this much and then will dismiss
-    await Future<void>.delayed(const Duration(seconds: 3));
+    await Future<void>.delayed(const Duration(seconds: 1));
     await _controller.reverse(from: 1);
     // call onDismissedCallback so OverlayWidget can remove and clear the OverlayEntry.
     widget.onBannerDismissed?.call();

@@ -112,7 +112,7 @@ class FillBlanksGameData {
   final List<String> optionList;
 
   int getMinSelection() {
-    return multiAcceptedAnswers[0].length;
+    return multiAcceptedAnswers.length;
   }
 }
 
@@ -296,7 +296,7 @@ class GameDataBank {
     playbackBank.add(
       // An example using the Sally's mom example
       PlaybackGameData(
-        webAudioLink: 'webAudioLink', 
+        webAudioLink: '/audio/level_up_3h.mp3', 
         multiAcceptedAnswers: [
           ["She", "is", "forty", "years-old"]
         ],
@@ -311,7 +311,7 @@ class GameDataBank {
     playbackBank.add(
       // The audio would say: Five times what number results in thrity?
       PlaybackGameData(
-        webAudioLink: 'webAudioLink', 
+        webAudioLink: '/audio/level_up_3h.mp3', 
         multiAcceptedAnswers: [
           ["six"]
         ],

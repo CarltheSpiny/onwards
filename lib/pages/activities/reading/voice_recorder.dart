@@ -30,6 +30,8 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   bool _isListening = false;
   String defaultTranscribedText = "Press the button to start speaking and your words will appear here!";
   String _transcribedText = "Press the button to start speaking and your words will appear here!";
+  
+  OverlayEntry? entry;
 
   @override
   void initState() {
@@ -63,7 +65,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     }
   }
 
-  bool _validate() {
+  bool validateAnswer() {
     bool isCorrect = true;
 
     for (List<String> answerList in widget.acceptedAnswers) {
@@ -90,45 +92,35 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     });
   }
 
-  Future _showCorrectDialog() {
+  Future _showCorrectDialog(bool showOverlay) {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
+          // handle the listening state
           setState(() => _isListening = false),
           _speech.stop(),
           Navigator.pop(context), // dialog
           Navigator.pop(context), // page
-          Navigator.push(
-            context, 
-            MaterialPageRoute(
-              builder: (context) => ReadingActivityScreen(colorProfile: widget.colorProfile,)
-            )
-          )
         }, 
-        child: const Text('Try Again')
-      ),
-      TextButton(
-        onPressed: () => {
-          setState(() => _isListening = false),
-          _speech.stop(),
-          Navigator.pop(context),
-          Navigator.pop(context)
-        }, 
-        child: const Text('Go back Home')
+        child: Text('Go back Home',
+          style: TextStyle(
+            color: widget.colorProfile.textColor
+          ),
+        )
       ),
     ];
 
-    if (_validate()) {
+    if (showOverlay) {
       return showDialog(
         context: context, 
         builder: (context) {
           return AlertDialog(
             actions: answerDialogList,
-            title:  Text('Way to go!',
+            title: Text('Way to go!',
               style: TextStyle(
                 color: widget.colorProfile.textColor
               ),),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -149,7 +141,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -158,6 +150,31 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    void hideOverlay() {
+      entry?.remove();
+      entry = null;
+      // we can assert the answer is true if we got this far
+      _showCorrectDialog(true);
+    }
+
+    void showAnimation() {
+      entry = OverlayEntry(
+        builder: (context) => OverlayBanner(
+          onBannerDismissed: () {
+            hideOverlay();
+          },
+        )
+      );
+
+      final overlay = Overlay.of(context);
+      overlay.insert(entry!);
+    }
+
+    void showDisplay() {
+      WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+    }
+    
+    bool valid;
     return Align(
       alignment: Alignment.center,
       child: Column(
@@ -212,7 +229,14 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(
-                onPressed: _showCorrectDialog,
+                onPressed: () => {
+                  valid = validateAnswer(),
+                  if (valid) {
+                    showDisplay()
+                  } else {
+                    _showCorrectDialog(valid)
+                  }
+                },
                 style: ButtonStyle(
                   backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
                 ),

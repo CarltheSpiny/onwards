@@ -46,20 +46,19 @@ const ColorProfile lightFlavor = ColorProfile(
 const ColorProfile plainFlavor = ColorProfile(
     backgroundColor: Colors.white,
     headerColor: Color.fromARGB(255, 210, 210, 210),
-    buttonColor: Colors.grey, 
-    textColor: Colors.black,
-    contrastTextColor: Colors.black,
+    buttonColor: Color.fromARGB(255, 34, 61, 89), 
+    textColor: Colors.white,
+    contrastTextColor: Colors.white,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_plain_background.png"), 
-        repeat: ImageRepeat.repeat,
-        scale: 0.4
+        image: AssetImage("/images/space.jpg"), 
+        fit: BoxFit.fitWidth
       ),
       color: Colors.white
     ),
-    backgroundImage: AssetImage("/images/eb_plain_background.png"),
+    backgroundImage: AssetImage("/images/space.jpg"),
     idKey: "plain flavor"
   );
 
@@ -78,13 +77,13 @@ const ColorProfile mintFlavor = ColorProfile(
       ),
       color: Color.fromARGB(255, 18, 165, 170),
     ),
-    backgroundImage: AssetImage("/images/eb_mint_background.png"),
+    backgroundImage: AssetImage("/images/mint_flavor.png"),
     idKey: "mint flavor"
   );
 
 const ColorProfile strawberryFlavor = ColorProfile(
     backgroundColor: Colors.white,
-    headerColor: Color.fromARGB(255, 255, 93, 93),
+    headerColor: Color.fromARGB(255, 254, 129, 177),
     buttonColor: Color.fromARGB(255, 250, 135, 135), 
     textColor: Colors.white,
     contrastTextColor: Colors.black,
@@ -92,53 +91,51 @@ const ColorProfile strawberryFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_strawberry_background.png"), 
+        image: AssetImage("/images/rad_red.jpg"), 
         repeat: ImageRepeat.repeat,
         scale: 0.4
       ),
       color: Color.fromARGB(255, 197, 81, 187),
     ),
-    backgroundImage: AssetImage("/images/eb_strawberry_background.png"),
+    backgroundImage: AssetImage("/images/rad_red.jpg"),
     idKey: "strawberry flavor"
   );
 
 const ColorProfile bananaFlavor = ColorProfile(
     backgroundColor: Colors.white,
     headerColor: Colors.yellow,
-    buttonColor: Color.fromARGB(255, 101, 101, 101), 
+    buttonColor: Color.fromARGB(255, 237, 226, 9), 
     textColor: Colors.black,
     contrastTextColor: Colors.white,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_banana_background.png"), 
-        repeat: ImageRepeat.repeat,
-        scale: 0.4
+        image: AssetImage("/images/yellow.jpg"), 
+        fit: BoxFit.fitWidth
       ),
       color: Color.fromARGB(255, 255, 251, 0),
     ),
-    backgroundImage: AssetImage("/images/eb_banana_background.png"),
+    backgroundImage: AssetImage("/images/yellow.jpg"),
     idKey: "banana flavor"
   );
 
 const ColorProfile peanutFlavor = ColorProfile(
     backgroundColor: Colors.white,
     headerColor: Color.fromARGB(255, 215, 129, 43),
-    buttonColor: Colors.grey, 
-    textColor: Colors.white,
+    buttonColor: Color.fromARGB(255, 210, 139, 40), 
+    textColor: Colors.black,
     contrastTextColor: Colors.white,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_nut_background.png"), 
-        repeat: ImageRepeat.repeat,
-        scale: 0.4
+        image: AssetImage("/images/dreamy.jpg"), 
+        fit: BoxFit.fitWidth
       ),
       color: Color.fromARGB(255, 168, 98, 79),
     ),
-    backgroundImage: AssetImage("/images/eb_nut_background.png"),
+    backgroundImage: AssetImage("/images/dreamy.jpg"),
     idKey: "peanut flavor"
   );
 

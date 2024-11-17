@@ -60,6 +60,7 @@ class GameForm extends StatefulWidget {
 class _GameFormState extends State<GameForm> {
 
   final _answerFieldController = TextEditingController();
+  OverlayEntry? entry;
   
   /// Checks the answer in the field against the accepted answers. The answer in the
   /// field is turned to lowercase before validation
@@ -82,33 +83,22 @@ class _GameFormState extends State<GameForm> {
     return isCorrect;
   }
 
-  Future _showCorrectDialog() {
+  Future _showCorrectDialog(bool showOverlay) {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
           Navigator.pop(context),
-          Navigator.popAndPushNamed(context, "/typing")
-        }, 
-        child: Text('Try Again',
-              style: TextStyle(
-                color: widget.colorProfile.contrastTextColor
-              ),)
-      ),
-      TextButton(
-        onPressed: () => {
           Navigator.pop(context),
-          Navigator.pop(context),
-          // Navigator.popAndPushNamed(context, "/")
         }, 
         child: Text('Go back Home',
-              style: TextStyle(
-                color: widget.colorProfile.contrastTextColor
-              ),
-            )
+          style: TextStyle(
+            color: widget.colorProfile.textColor
+          ),
+        )
       ),
     ];
 
-    if (validateAnswer()) {
+    if (showOverlay) {
       return showDialog(
         context: context, 
         builder: (context) {
@@ -116,9 +106,9 @@ class _GameFormState extends State<GameForm> {
             actions: answerDialogList,
             title: Text('Way to go!',
               style: TextStyle(
-                color: widget.colorProfile.contrastTextColor
+                color: widget.colorProfile.textColor
               ),),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -130,16 +120,16 @@ class _GameFormState extends State<GameForm> {
             content: Text(
               "Click any where to return to the problem",
               style: TextStyle(
-                color: widget.colorProfile.contrastTextColor
+                color: widget.colorProfile.textColor
               ),
             ),
             title: Text(
               'Try again...',
               style: TextStyle(
-                color: widget.colorProfile.contrastTextColor
+                color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -148,6 +138,30 @@ class _GameFormState extends State<GameForm> {
 
   @override
   Widget build(BuildContext context) {
+    bool valid;
+
+    void hideOverlay() {
+      entry?.remove();
+      entry = null;
+      _showCorrectDialog(true);
+    }
+
+    void showAnimation() {
+      entry = OverlayEntry(
+        builder: (context) => OverlayBanner(
+          onBannerDismissed: () {
+            hideOverlay();
+          },
+        )
+      );
+
+      final overlay = Overlay.of(context);
+      overlay.insert(entry!);
+    }
+
+    void showDisplay() {
+      WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+    }
     
     return Container(
       decoration: widget.colorProfile.backBoxDecoration,
@@ -192,13 +206,20 @@ class _GameFormState extends State<GameForm> {
                       border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10.0))),
                     ),
                     onFieldSubmitted: (value) {
-                      _showCorrectDialog();
+                      showDisplay();
                     }
                   ),
                 )
               ),
               TextButton(
-                onPressed: _showCorrectDialog, 
+                onPressed: () => {
+                  valid = validateAnswer(),
+                  if (valid) {
+                    showDisplay()
+                  } else {
+                    _showCorrectDialog(valid)
+                  }
+                }, 
                 style: ButtonStyle(
                   backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
                 ),

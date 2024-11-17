@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/game_test.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
+import 'package:onwards/pages/home.dart';
 
 /// The screen for the 'Fill in the Blank' game.
 /// Uses data in the form of GameData 
@@ -67,6 +68,7 @@ class GameFormState extends State<GameForm> {
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
+  OverlayEntry? entry;
 
   @override
   void initState() {
@@ -80,40 +82,32 @@ class GameFormState extends State<GameForm> {
       for (int i = 0; i < _selectedAnswers.length; i++) {
         if (_selectedAnswers[i] != widget.answers[i]) {
           isCorrect = false;
-          print("Correct answer did not match at: ${widget.answers[i]}");
+          logger.d("Correct answer did not match at: ${widget.answers[i]}");
         }
       }
     } else {
       isCorrect = false;
     }
+    logger.d("validated answer");
     return isCorrect;
   }
 
-  Future _showCorrectDialog() {
+  Future _showCorrectDialog(bool showOverlay) {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
           Navigator.pop(context),
-          Navigator.popAndPushNamed(context, "/fill-in-the-blank")
-        }, 
-        child: Text('Try Again', 
-            style: TextStyle(
-                color: widget.colorProfile.textColor,
-              ),)
-      ),
-      TextButton(
-        onPressed: () => {
-          Navigator.pop(context),
           Navigator.pop(context),
         }, 
-        child: Text('Go back Home', 
-            style: TextStyle(
-                color: widget.colorProfile.textColor,
-              ),)
+        child: Text('Continue', 
+          style: TextStyle(
+              color: widget.colorProfile.textColor,
+            ),
+          ),
       ),
     ];
 
-    if (validateAnswer()) {
+    if (showOverlay) {
       return showDialog(
         context: context, 
         builder: (context) {
@@ -123,7 +117,7 @@ class GameFormState extends State<GameForm> {
             style: TextStyle(
                 color: widget.colorProfile.textColor,
               ),),
-            backgroundColor: widget.colorProfile.headerColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -144,7 +138,7 @@ class GameFormState extends State<GameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.headerColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -215,6 +209,28 @@ class GameFormState extends State<GameForm> {
 
   @override
   Widget build(BuildContext context) {
+    void hideOverlay() {
+      entry?.remove();
+      entry = null;
+      _showCorrectDialog(validateAnswer());
+    }
+
+    void showAnimation() {
+      entry = OverlayEntry(
+        builder: (context) => OverlayBanner(
+          onBannerDismissed: () {
+            hideOverlay();
+          },
+        )
+      );
+
+      final overlay = Overlay.of(context);
+      overlay.insert(entry!);
+    }
+
+  void showDisplay() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+  }
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
     List<ButtonStyleButton> dynamicButtonList = <ButtonStyleButton> [];
@@ -298,7 +314,13 @@ class GameFormState extends State<GameForm> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: TextButton(
-                    onPressed: _showCorrectDialog, 
+                    onPressed: () => {
+                      if (validateAnswer()) {
+                        showDisplay()
+                      } else {
+                        _showCorrectDialog(validateAnswer())
+                      }
+                    }, 
                     style: ButtonStyle(
                       backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
                     ),

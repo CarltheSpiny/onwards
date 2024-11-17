@@ -74,6 +74,7 @@ class GameForm extends StatefulWidget {
 }
 
 class GameFormState extends State<GameForm> {
+  OverlayEntry? entry;
 
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
@@ -126,27 +127,18 @@ class GameFormState extends State<GameForm> {
     });
   }
 
-  Future _showCorrectDialog() {
+  Future _showCorrectDialog(errorIndex) {
     List<Widget> answerDialogList = [
-      TextButton(
-        onPressed: () => {
-          Navigator.pop(context), // dialog
-          Navigator.pop(context), // page
-          Navigator.push(
-            context, 
-            MaterialPageRoute(
-              builder: (context) => JumbleActivityScreen(colorProfile: widget.colorProfile,)
-            )
-          )
-        }, 
-        child: const Text('Try Again')
-      ),
       TextButton(
         onPressed: () => {
           Navigator.pop(context),
           Navigator.pop(context)
         }, 
-        child: const Text('Go back Home')
+        child: Text('Continue', 
+          style: TextStyle(
+            color: widget.colorProfile.textColor,
+          ),
+        ),
       ),
     ];
 
@@ -172,9 +164,7 @@ class GameFormState extends State<GameForm> {
           );
         }
       );
-    } 
-    // get the error index if any. if 0, there was some error. If -1, the answer is correct
-    int errorIndex = validateAnswer();
+    }
     
     if (errorIndex == -1) {
       // Show dialog with correct answer
@@ -188,7 +178,7 @@ class GameFormState extends State<GameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -210,7 +200,7 @@ class GameFormState extends State<GameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -262,6 +252,29 @@ class GameFormState extends State<GameForm> {
 
   @override
   Widget build(BuildContext context) {
+
+    void hideOverlay() {
+      entry?.remove();
+      entry = null;
+      _showCorrectDialog(validateAnswer());
+    }
+
+    void showAnimation() {
+      entry = OverlayEntry(
+        builder: (context) => OverlayBanner(
+          onBannerDismissed: () {
+            hideOverlay();
+          },
+        )
+      );
+
+      final overlay = Overlay.of(context);
+      overlay.insert(entry!);
+    }
+
+  void showDisplay() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+  }
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
     List<Widget> dynamicButtonList = <Widget> [];
@@ -340,7 +353,13 @@ class GameFormState extends State<GameForm> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: _selectedAnswers.isEmpty ? null : _showCorrectDialog, 
+                  onPressed: _selectedAnswers.isEmpty ? null : () => {
+                    if (validateAnswer() < 0) {
+                      showDisplay()
+                    } else {
+                      _showCorrectDialog(validateAnswer())
+                    }
+                  }, 
                   style: ButtonStyle(
                     backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
                   ),

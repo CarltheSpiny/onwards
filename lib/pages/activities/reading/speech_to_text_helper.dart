@@ -9,7 +9,8 @@ String convertNumbersAndSymbolsToWords(String input) {
     '=' : 'equals',
     '+' : 'plus',
     '-' : 'subtract',
-    '/' : 'divided by'
+    '/' : 'divided by',
+    '*' : 'times'
     // Add more symbols as needed
   };
 

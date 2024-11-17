@@ -164,16 +164,20 @@ class HomePageState extends State<HomePage> {
         subtitle: "Difficulty: Easy",
         styleMode: darkStyle,
       ),
-      GameCard(
-        imageAsset: const AssetImage(
-          'assets/images/jumble-preview.png'
+      Tooltip(
+        message: "Use jumbled blocks to build the translated phrase",
+        verticalOffset: 130,
+        child: GameCard(
+          imageAsset: const AssetImage(
+            'assets/images/jumble-preview.png'
+          ),
+          gameRoute: '/jumble',
+          gameWidget: JumbleActivityScreen(colorProfile: currentProfile),
+          keyId: 2,
+          title: "Translate Jumble",
+          subtitle: "Difficulty: Medium",
+          styleMode: darkStyle,
         ),
-        gameRoute: '/jumble',
-        gameWidget: JumbleActivityScreen(colorProfile: currentProfile),
-        keyId: 2,
-        title: "Translate Jumble",
-        subtitle: "Difficulty: Medium",
-        styleMode: darkStyle,
       ),
       GameCard(
         imageAsset: const AssetImage(
@@ -241,24 +245,49 @@ class HomePageState extends State<HomePage> {
                       return Text('Error: ${snapshot.error}', style: TextStyle(color: currentProfile.textColor));
                     } else {
                       return Text(
-                        'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
-                        'This should persist across restarts.', style: TextStyle(color: currentProfile.textColor)
+                        'Current theme: ${currentProfile.idKey}',
+                        style: TextStyle(
+                          color: currentProfile.textColor
+                        ),
                       );
                     }
                 }
               }),
-              ElevatedButton(
-                onPressed: _incrementCounter,
-                child: const Icon(Icons.add),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Tooltip(
+                    message: "Previous Theme",
+                    child: ElevatedButton(
+                      onPressed: _decrementCounter, 
+                      child: const Icon(Icons.arrow_left)
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      "Theme Select",
+                      style: TextStyle(
+                        color: currentProfile.textColor
+                      ),
+                    ),
+                  ),
+                  Tooltip(
+                    message: "Next Theme",
+                    preferBelow: true,
+                    child: ElevatedButton(
+                      onPressed: _incrementCounter,
+                      child: const Icon(Icons.arrow_right),
+                    ),
+                  )
+                ],
               ),
-              ElevatedButton(
-                onPressed: _decrementCounter, 
-                child: const Icon(Icons.remove)
-              ),
-              GameTestPage(
-                colorProfile: currentProfile
-              ),
-              const OverlayWidget()
+              Tooltip(
+                message: "Start a series of 10 questions",
+                child: GameTestPage(
+                  colorProfile: currentProfile
+                ),
+              )
             ],
           )
         )

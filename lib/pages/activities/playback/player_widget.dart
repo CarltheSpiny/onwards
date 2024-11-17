@@ -32,13 +32,9 @@ class _PlayerWidgetState extends State<PlayerWidget> {
   StreamSubscription? _playerStateChangeSubscription;
 
   bool get _isPlaying => _playerState == PlayerState.playing;
-
   bool get _isPaused => _playerState == PlayerState.paused;
-
   String get _durationText => _duration?.toString().split('.').first ?? '';
-
   String get _positionText => _position?.toString().split('.').first ?? '';
-
   AudioPlayer get player => widget.player;
 
   @override

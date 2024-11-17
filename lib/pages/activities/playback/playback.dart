@@ -28,23 +28,17 @@ class PlaybackActivityScreen extends StatelessWidget {
       ),
       body: Container(
         decoration: colorProfile.backBoxDecoration,
-        child: Column(
-          children: [
-            SoundPlayerWidget(
-              audioSource: AssetSource('/audio/level_up_3h.mp3'),
-              colorProfile: colorProfile,
-            ),
-            PlaybackGameForm(
-              answers: playbackData.multiAcceptedAnswers, 
-              questionLabel: "Debug: ${playbackData.audioTranscript}", 
-              maxSelectedAnswers: playbackData.getMinSelection(), 
-              buttonOptions: playbackData.optionList,
-              titleQuestion: playbackData.writtenPrompt,
-              showArithmitic: true,
-              colorProfile: colorProfile,
-            ),
-          ],
-        ),
+        child: 
+          PlaybackGameForm(
+            audioSource: AssetSource(playbackData.webAudioLink),
+            answers: playbackData.multiAcceptedAnswers, 
+            questionLabel: "Debug: ${playbackData.audioTranscript}", 
+            maxSelectedAnswers: playbackData.getMinSelection(), 
+            buttonOptions: playbackData.optionList,
+            titleQuestion: playbackData.writtenPrompt,
+            showArithmitic: true,
+            colorProfile: colorProfile,
+          ),
       )
     );
   }
@@ -109,9 +103,11 @@ class PlaybackGameForm extends StatefulWidget {
     required this.buttonOptions,
     required this.titleQuestion,
     required this.showArithmitic,
-    required this.colorProfile
+    required this.colorProfile,
+    required this.audioSource
   });
 
+  final AssetSource audioSource;
   final ColorProfile colorProfile; 
   /// The label for the question, which should be the math form for this game
   final String questionLabel;
@@ -133,6 +129,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
+  OverlayEntry? entry;
 
   @override
   void initState() {
@@ -181,56 +178,21 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
     });
   }
 
-  Future _showCorrectDialog() {
+  Future _showCorrectDialog(int errorIndex) {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
           Navigator.pop(context), // dialog
           Navigator.pop(context), // page
-          Navigator.push(
-            context, 
-            MaterialPageRoute(
-              builder: (context) => PlaybackActivityScreen(colorProfile: widget.colorProfile,)
-            )
-          )
         }, 
-        child: const Text('Try Again')
-      ),
-      TextButton(
-        onPressed: () => {
-          Navigator.pop(context),
-          Navigator.pop(context)
-        }, 
-        child: const Text('Go back Home')
+        child: Text('Continue', 
+          style: TextStyle(
+            color: widget.colorProfile.textColor,
+          ),
+        ),
       ),
     ];
 
-   // show an error dialog if the selected answers are empty (obselete)
-    if (_selectedAnswers.isEmpty) {
-      return showDialog(
-        context: context, 
-        builder: (context) {
-          return AlertDialog(
-            content: Text(
-              "Select more options",
-              style: TextStyle(
-                color: widget.colorProfile.textColor
-              ),
-            ),
-            title: Text(
-              'Incomplete Answer',
-              style: TextStyle(
-                color: widget.colorProfile.textColor
-              ),
-            ),
-            backgroundColor: widget.colorProfile.buttonColor,
-          );
-        }
-      );
-    } 
-    // get the error index if any. if 0, there was some error. If -1, the answer is correct
-    int errorIndex = validateAnswer();
-    
     if (errorIndex == -1) {
       // Show dialog with correct answer
       return showDialog(
@@ -243,7 +205,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -265,11 +227,10 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
-    
     } else {
       // Show dialog with location of error
       return showDialog(
@@ -288,7 +249,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                 color: widget.colorProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.backgroundColor,
+            backgroundColor: widget.colorProfile.buttonColor,
           );
         }
       );
@@ -320,6 +281,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
     List<Widget> dynamicButtonList = <Widget> [];
+    int valid = 0;
 
     for (String option in widget.buttonOptions) {
       Widget button = Padding(
@@ -343,10 +305,31 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
       dynamicButtonList.add(button);
     }
     
+    void hideOverlay() {
+      entry?.remove();
+      entry = null;
+      _showCorrectDialog(valid);
+    }
+
+    void showAnimation() {
+      entry = OverlayEntry(
+        builder: (context) => OverlayBanner(
+          onBannerDismissed: () {
+            hideOverlay();
+          },
+        )
+      );
+
+      final overlay = Overlay.of(context);
+      overlay.insert(entry!);
+    }
+
+  void showDisplay() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+  }
     // Render the form here
-    return Container(
-      decoration: widget.colorProfile.backBoxDecoration,
-      child: Align(
+    return 
+      Align(
         alignment: Alignment.center,
         child: Column(
           children: [
@@ -369,6 +352,10 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                   
                 ),
               ) : null,
+            ),
+            SoundPlayerWidget(
+              audioSource: widget.audioSource, 
+              colorProfile: widget.colorProfile
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -395,7 +382,14 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: _selectedAnswers.isEmpty ? null : _showCorrectDialog, 
+                  onPressed: _selectedAnswers.isEmpty ? null : () => {
+                    valid = validateAnswer(),
+                    if (valid < 0) {
+                      showDisplay()
+                    } else {
+                      _showCorrectDialog(valid)
+                    }
+                  }, 
                   style: ButtonStyle(
                     backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
                   ),
@@ -424,8 +418,6 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
             )
           ],
         ),
-      ),
-    );
-    
+      );
   }
 }
