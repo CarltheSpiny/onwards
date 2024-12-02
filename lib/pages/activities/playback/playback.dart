@@ -2,12 +2,13 @@
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/activities/playback/player_widget.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PlaybackActivityScreen extends StatelessWidget {
   const PlaybackActivityScreen(
@@ -129,6 +130,12 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
+  final Future<SharedPreferencesWithCache> _prefs =
+    SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{'correct'}
+      ));
+  late Future<int> _counter;
   OverlayEntry? entry;
 
   @override
@@ -136,6 +143,18 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
     maxSelection = widget.maxSelectedAnswers;
     super.initState();
   }
+
+  Future<void> _incrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final int counter = (prefs.getInt('correct') ?? 0) + 1;
+    setState(() {
+      _counter = prefs.setInt('correct', counter).then((_) {
+        logger.i('Updating correct count...');
+        return counter;
+      });
+    });
+  }
+
   /// Validate the current selection against the multiple answers
   int validateAnswer() {
     int errorIndex = 0;
@@ -182,6 +201,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
+          _incrementCounter(),
           Navigator.pop(context), // dialog
           Navigator.pop(context), // page
         }, 

@@ -1,7 +1,7 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/activities/reading/voice_recorder.dart';
 import 'package:onwards/pages/game_data.dart';

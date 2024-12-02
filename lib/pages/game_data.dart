@@ -9,7 +9,8 @@ class GameData {
     required this.multiAcceptedAnswers,
     this.blankForm = 'Forty ____ thirty ____ thirty-four',
     this.maxAnswerCount = 2,
-    required this.optionList
+    required this.optionList,
+    this.topicCategory = 'arithmitic'
   });
 
   String arithmiticForm;
@@ -18,15 +19,18 @@ class GameData {
   String blankForm;
   int maxAnswerCount;
   final List<String> optionList;
+  final String topicCategory;
 }
 
+// Unique ID for each question; Should be meaningful
 class PlaybackGameData {
   PlaybackGameData({
     required this.webAudioLink,
     required this.multiAcceptedAnswers,
     required this.writtenPrompt,
     this.audioTranscript = 'Dummy transcript',
-    required this.optionList
+    required this.optionList,
+    this.topicCategory = "arithmitic"
   });
   
   final String webAudioLink;
@@ -34,6 +38,7 @@ class PlaybackGameData {
   final String writtenPrompt;
   String audioTranscript;
   final List<String> optionList;
+  final String topicCategory;
 
   int getMinSelection() {
     return multiAcceptedAnswers[0].length;
@@ -45,7 +50,8 @@ class JumbleGameData {
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
     this.writtenPrompt = "Use the buttons below to answer the prompt",
-    required this.optionList
+    required this.optionList,
+    this.topicCategory = 'arthimitc'
   });
   
   /// The actual problem shown under the written prompt. This can be arithmitic or a word problem
@@ -57,6 +63,7 @@ class JumbleGameData {
   final String writtenPrompt;
   /// The labels that will be used on the buttons
   final List<String> optionList;
+  final String topicCategory;
 
   int getMinSelection() {
     return multiAcceptedAnswers[0].length;
@@ -69,7 +76,8 @@ class ReadAloudGameData {
     required this.multiAcceptedAnswers,
     this.writtenPrompt = "Answer the question by speaking into to the microphone.",
     this.addtionalInstructions = "Your speech will be turned into numbers. Make sure you have microphone access enabled.",
-    this.useNumWordProtocol = true
+    this.useNumWordProtocol = true,
+    this.topicCategory = 'arthimitc'
   });
   
   /// The actual problem shown under the written prompt. This can be arithmitic or a word problem
@@ -81,18 +89,21 @@ class ReadAloudGameData {
   final String writtenPrompt;
   final String addtionalInstructions;
   final bool useNumWordProtocol;
+  final String topicCategory;
 }
 
 class TypingGameData {
   TypingGameData({
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
-    this.writtenPrompt = "Write the expression in written form (do not use special characters)"
+    this.writtenPrompt = "Write the expression in written form (do not use special characters)",
+    this.topicCategory = 'arthimitc'
   });
   
   final String displayedProblem;
   final List<String> multiAcceptedAnswers;
   final String writtenPrompt;
+  final String topicCategory;
 }
 
 class FillBlanksGameData {
@@ -101,8 +112,8 @@ class FillBlanksGameData {
     required this.multiAcceptedAnswers,
     required this.writtenPrompt,
     required this.blankForm,
-    required this.optionList
-    
+    required this.optionList,
+    this.topicCategory = 'arthimitc'
   });
   
   final String displayedProblem;
@@ -110,36 +121,15 @@ class FillBlanksGameData {
   final String writtenPrompt;
   final String blankForm;
   final List<String> optionList;
+  final String topicCategory;
 
   int getMinSelection() {
     return multiAcceptedAnswers.length;
   }
 }
 
-// Fill in the Blank needs more info than just arithmitic and such. The important part is the blank form and different max counts
-class FITBGameData extends GameData {
-  FITBGameData({
-    required super.arithmiticForm,
-    required super.acceptedAnswers, 
-    required super.multiAcceptedAnswers, 
-    required super.optionList,
-    required this.maxAnswerCountForBlanks,
-    required this.blankFormForBlanks
-  });
-
-  final int maxAnswerCountForBlanks;
-  final String blankFormForBlanks;
-
-  @override
-  String get blankForm => blankFormForBlanks;
-  @override
-  int get maxAnswerCount => maxAnswerCountForBlanks;
-  
-}
-
 class GameDataBank {
   List<GameData> dataBank = [];
-  List<FITBGameData> fitb_dataBank = [];
   final random = Random();
 
   // Modified banks
@@ -217,20 +207,6 @@ class GameDataBank {
         maxAnswerCount: 4,
         optionList: [
           "She", "eight", "five", "forty", "thrity-two", "is", "forty-eight", "years-old"
-        ]
-      ));
-
-      fitb_dataBank.add(
-      FITBGameData(
-        arithmiticForm: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?',
-        acceptedAnswers: ["forty"],
-        multiAcceptedAnswers: [
-          ["forty"],
-        ],
-        blankFormForBlanks: "Sally's mother is  ____ years old",
-        maxAnswerCountForBlanks: 1,
-        optionList: [
-          "eight", "five", "forty", "thrity-two", "forty-eight"
         ]
       ));
     }
@@ -435,15 +411,6 @@ class GameDataBank {
       return typingBank[randomIndex];
     } else {
       throw Exception('The typingBank data bank is empty');
-    }
-  }
-
-  GameData getFillRandomElement() {
-    if (fitb_dataBank.isNotEmpty) {
-      int randomIndex = random.nextInt(fitb_dataBank.length);
-      return fitb_dataBank[randomIndex];
-    } else {
-      throw Exception('The data bank is empty');
     }
   }
 

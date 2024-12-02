@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
@@ -50,16 +50,21 @@ class HomePageState extends State<HomePage> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'counter'}
+        allowList: <String>{'counter', 'correct', 'missed', 'mastered_topics', 'weak_topics'}
       ));
-  late Future<int> _counter;
+  late Future<int> _themeId;
+  late Future<int> _correctCounter;
+  late Future<int> missedCounter;
+  late Future<List<String>> masteredTopicList;
+  late Future<List<String>> weakTopicList;
+
   int _externalCounter = 0;
 
   final maxThemes = 6;
 
   ColorProfile currentProfile = lightFlavor;
 
-  Future<void> _loadTheme() async {
+  Future<void> loadTheme() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     int? themeIndex = (prefs.getInt('counter') ?? 0);
 
@@ -96,10 +101,42 @@ class HomePageState extends State<HomePage> {
     }
     final int counter = (prefs.getInt('counter') ?? 0) + 1;
     setState(() {
-      _counter = prefs.setInt('counter', counter).then((_) {
+      _themeId = prefs.setInt('counter', counter).then((_) {
         logger.i('Updating theme...');
         currentProfile = _getProfileByIndex(counter);
         return counter;
+      });
+    });
+  }
+
+  Future<void> addMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    if (mastered.contains(topic)) {
+      return;
+    }
+
+    mastered.add(topic);
+
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
+      });
+    });
+  }
+
+  Future<void> removeMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    if (!mastered.contains(topic)) {
+      return;
+    }
+    
+    mastered.remove(topic);
+
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
       });
     });
   }
@@ -112,7 +149,7 @@ class HomePageState extends State<HomePage> {
 
     final int counter = (prefs.getInt('counter') ?? 0) - 1;
     setState(() {
-      _counter = prefs.setInt('counter', counter).then((_) {
+      _themeId = prefs.setInt('counter', counter).then((_) {
         logger.i('Updating theme...');
         currentProfile = _getProfileByIndex(counter);
         return counter;
@@ -131,16 +168,29 @@ class HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+    _themeId = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('counter') ?? 0;
     });
+    _correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('correct') ?? 0;
+    });
+    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('missed') ?? 0;
+    });
+
+    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('mastered_topics') ?? <String>[];
+    });
+    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('weak_topics') ?? <String>[];
+    });
+
     _getExternalCounter();
-    _loadTheme();
+    loadTheme();
   }
 
   @override
   Widget build(BuildContext context) {
-
     List<Widget> gameCards = <Widget> [
       GameCard(
         imageAsset: const AssetImage(
@@ -207,6 +257,8 @@ class HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Home'),
         backgroundColor: currentProfile.headerColor,
+        centerTitle: true,
+        
       ),
       body: Container(
         decoration: currentProfile.backBoxDecoration,
@@ -233,7 +285,7 @@ class HomePageState extends State<HomePage> {
               ),
             ),
             FutureBuilder<int>(
-              future: _counter, 
+              future: _themeId, 
               builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
                 switch (snapshot.connectionState) {
                   case ConnectionState.none:
@@ -252,46 +304,121 @@ class HomePageState extends State<HomePage> {
                       );
                     }
                 }
-              }),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Tooltip(
-                    message: "Previous Theme",
-                    child: ElevatedButton(
-                      onPressed: _decrementCounter, 
-                      child: const Icon(Icons.arrow_left)
+              }
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Tooltip(
+                  message: "Previous Theme",
+                  child: ElevatedButton(
+                    style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
+                    onPressed: _decrementCounter, 
+                    child: const Icon(Icons.arrow_left)
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    "Theme Select",
+                    style: TextStyle(
+                      color: currentProfile.textColor
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      "Theme Select",
-                      style: TextStyle(
-                        color: currentProfile.textColor
-                      ),
-                    ),
+                ),
+                Tooltip(
+                  message: "Next Theme",
+                  preferBelow: true,
+                  child: ElevatedButton(
+                    style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
+                    onPressed: _incrementCounter,
+                    child: const Icon(Icons.arrow_right),
                   ),
-                  Tooltip(
-                    message: "Next Theme",
-                    preferBelow: true,
-                    child: ElevatedButton(
-                      onPressed: _incrementCounter,
-                      child: const Icon(Icons.arrow_right),
-                    ),
-                  )
-                ],
-              ),
-              Tooltip(
+                )
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Tooltip(
                 message: "Start a series of 10 questions",
+                verticalOffset: -50,
                 child: GameTestPage(
                   colorProfile: currentProfile
                 ),
+              ),
+            ),
+            ElevatedButton(
+              style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
+              onPressed: () => {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => SeriesEndPage(colorProfile: currentProfile),))
+              }, 
+              child: Text(
+                "Test the result page",
+                style: TextStyle(
+                  color: currentProfile.textColor
+                ),
               )
-            ],
-          )
+            ),
+            ElevatedButton(
+              onPressed: () => {
+                addMasteredTopic('time'),
+              }, 
+              child: const Text('Add a topic'),
+            ),
+            ElevatedButton(
+              onPressed: () => {
+                removeMasteredTopic('time'),
+              }, 
+              child: const Text('remove a topic'),
+            ),
+            FutureBuilder<int>(
+              future: _correctCounter, 
+              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.none:
+                  case ConnectionState.waiting:
+                    return const CircularProgressIndicator();
+                  case ConnectionState.active:
+                  case ConnectionState.done:
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}', style: TextStyle(color: currentProfile.textColor));
+                    } else {
+                      return Text(
+                        'Number of Correct Answers in this session: ${snapshot.data ?? 0}',
+                        style: TextStyle(
+                          color: currentProfile.textColor
+                        ),
+                      );
+                    }
+                }
+              }
+            ),
+            FutureBuilder<List<String>>(
+              future: masteredTopicList, 
+              builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.none:
+                  case ConnectionState.waiting:
+                    return const CircularProgressIndicator();
+                  case ConnectionState.active:
+                  case ConnectionState.done:
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}', style: TextStyle(color: currentProfile.textColor));
+                    } else {
+                      return Text(
+                        'Mastered topics for this session: ${snapshot.data ?? "No data"}',
+                        style: TextStyle(
+                          color: currentProfile.textColor
+                        ),
+                      );
+                    }
+                }
+              }
+            ),
+          ],
         )
-      );
+      )
+    );
   }
 }
 

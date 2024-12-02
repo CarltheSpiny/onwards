@@ -1,10 +1,11 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TypeActivityScreen extends StatelessWidget {
   const TypeActivityScreen({
@@ -58,9 +59,33 @@ class GameForm extends StatefulWidget {
 }
 
 class _GameFormState extends State<GameForm> {
-
+  final Future<SharedPreferencesWithCache> _prefs =
+    SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{'correct'}
+      ));
+  late Future<int> _counter;
   final _answerFieldController = TextEditingController();
   OverlayEntry? entry;
+
+  @override
+  void initState() {
+    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('correct') ?? 0;
+    });
+    super.initState();
+  }
+
+  Future<void> _incrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final int counter = (prefs.getInt('correct') ?? 0) + 1;
+    setState(() {
+      _counter = prefs.setInt('correct', counter).then((_) {
+        logger.i('Updating correct count...');
+        return counter;
+      });
+    });
+  }
   
   /// Checks the answer in the field against the accepted answers. The answer in the
   /// field is turned to lowercase before validation
@@ -87,6 +112,7 @@ class _GameFormState extends State<GameForm> {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
+          _incrementCounter(),
           Navigator.pop(context),
           Navigator.pop(context),
         }, 

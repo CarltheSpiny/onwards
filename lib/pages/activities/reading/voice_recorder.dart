@@ -3,6 +3,7 @@ import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/reading/speech_to_text_helper.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class AudioTranscriptionWidget extends StatefulWidget {
@@ -30,13 +31,32 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   bool _isListening = false;
   String defaultTranscribedText = "Press the button to start speaking and your words will appear here!";
   String _transcribedText = "Press the button to start speaking and your words will appear here!";
-  
+  final Future<SharedPreferencesWithCache> _prefs =
+    SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{'correct'}
+      ));
+  late Future<int> _counter;
   OverlayEntry? entry;
 
   @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
+    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('correct') ?? 0;
+    });
+  }
+
+  Future<void> _incrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final int counter = (prefs.getInt('correct') ?? 0) + 1;
+    setState(() {
+      _counter = prefs.setInt('correct', counter).then((_) {
+        logger.i('Updating correct count...');
+        return counter;
+      });
+    });
   }
 
   void _listen() async {
@@ -99,6 +119,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
           // handle the listening state
           setState(() => _isListening = false),
           _speech.stop(),
+          _incrementCounter(),
           Navigator.pop(context), // dialog
           Navigator.pop(context), // page
         }, 
@@ -229,7 +250,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(
-                onPressed: () => {
+                onPressed: _isListening || _speech.isListening ? null : () => {
                   valid = validateAnswer(),
                   if (valid) {
                     showDisplay()

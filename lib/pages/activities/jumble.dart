@@ -1,8 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 
@@ -35,6 +36,7 @@ class JumbleActivityScreen extends StatelessWidget {
           titleQuestion: jumbleGameData.writtenPrompt,
           showArithmitic: true,
           colorProfile: colorProfile,
+          questionTopic: jumbleGameData.topicCategory,
         ),
       ),
     );
@@ -54,7 +56,8 @@ class GameForm extends StatefulWidget {
     required this.buttonOptions,
     required this.titleQuestion,
     required this.showArithmitic,
-    required this.colorProfile
+    required this.colorProfile,
+    this.questionTopic = 'arithmitic with 4 places'
   });
 
   final ColorProfile colorProfile; 
@@ -68,12 +71,22 @@ class GameForm extends StatefulWidget {
   final List<String> buttonOptions;
   final String titleQuestion;
   final bool showArithmitic;
+  final String questionTopic;
 
   @override
   GameFormState createState() => GameFormState();
 }
 
 class GameFormState extends State<GameForm> {
+  final Future<SharedPreferencesWithCache> _prefs =
+    SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{'correct', 'missed', 'mastered_topics', 'weak_topics'}
+      ));
+  late Future<int> _correctCounter;
+  late Future<int> missedCounter;
+  late Future<List<String>> masteredTopicList;
+  late Future<List<String>> weakTopicList;
   OverlayEntry? entry;
 
   final List<String> _selectedAnswers = [];
@@ -83,8 +96,50 @@ class GameFormState extends State<GameForm> {
   @override
   void initState() {
     maxSelection = widget.maxSelectedAnswers;
+    _correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('correct') ?? 0;
+    });
+    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('missed') ?? 0;
+    });
+
+    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('mastered_topics') ?? <String>[];
+    });
+    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('weak_topics') ?? <String>[];
+    });
     super.initState();
   }
+
+  Future<void> _incrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final int counter = (prefs.getInt('correct') ?? 0) + 1;
+    setState(() {
+      _correctCounter = prefs.setInt('correct', counter).then((_) {
+        logger.i('Updating correct count...');
+        return counter;
+      });
+    });
+  }
+
+  Future<void> addMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    if (mastered.contains(topic)) {
+      return;
+    }
+
+    mastered.add(topic);
+
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
+      });
+    });
+  }
+
+
   /// Validate the current selection against the multiple answers
   int validateAnswer() {
     int errorIndex = 0;
@@ -130,9 +185,19 @@ class GameFormState extends State<GameForm> {
   Future _showCorrectDialog(errorIndex) {
     List<Widget> answerDialogList = [
       TextButton(
-        onPressed: () => {
-          Navigator.pop(context),
-          Navigator.pop(context)
+        onPressed: () async {
+          _incrementCounter();
+          addMasteredTopic(widget.questionTopic);
+          // removes the dialog
+          Navigator.of(context)
+            .pop('someString');
+          Navigator.of(context)
+            .pop('someString');
+          // the line here pushes the homepage again. for series, it should not do this
+          /*
+          Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => const HomePage()));
+          */
         }, 
         child: Text('Continue', 
           style: TextStyle(
@@ -252,7 +317,6 @@ class GameFormState extends State<GameForm> {
 
   @override
   Widget build(BuildContext context) {
-
     void hideOverlay() {
       entry?.remove();
       entry = null;
@@ -302,6 +366,10 @@ class GameFormState extends State<GameForm> {
     }
     
     // Render the form here
+    /*
+    'Button tapped ${snapshot.data ?? 0 + _externalCounter} time${(snapshot.data ?? 0 + _externalCounter) == 1 ? '' : 's'}.\n\n'
+    'This should persist across restarts.', style: TextStyle(color: currentProfile.textColor)
+    */
     return Container(
       decoration: widget.colorProfile.backBoxDecoration,
       child: Align(
@@ -369,7 +437,6 @@ class GameFormState extends State<GameForm> {
                         color: widget.colorProfile.contrastTextColor
                       ),
                   ),
-                  
                 ),
                 TextButton(
                   onPressed: () => {
@@ -382,8 +449,8 @@ class GameFormState extends State<GameForm> {
                     'Clear all answers',
                     style: TextStyle(
                       color: widget.colorProfile.contrastTextColor),
-                    )
                   )
+                ),
               ],
             )
           ],

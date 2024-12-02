@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_test.dart';
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The screen for the 'Fill in the Blank' game.
 /// Uses data in the form of GameData 
@@ -68,12 +69,32 @@ class GameFormState extends State<GameForm> {
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
+  final Future<SharedPreferencesWithCache> _prefs =
+    SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(
+        allowList: <String>{'correct'}
+      ));
+  late Future<int> _counter;
   OverlayEntry? entry;
 
   @override
   void initState() {
     maxSelection = widget.maxSelectedAnswers;
+    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('correct') ?? 0;
+    });
     super.initState();
+  }
+
+  Future<void> _incrementCounter() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final int counter = (prefs.getInt('correct') ?? 0) + 1;
+    setState(() {
+      _counter = prefs.setInt('correct', counter).then((_) {
+        logger.i('Updating correct count...');
+        return counter;
+      });
+    });
   }
 
   bool validateAnswer() {
@@ -96,6 +117,7 @@ class GameFormState extends State<GameForm> {
     List<Widget> answerDialogList = [
       TextButton(
         onPressed: () => {
+          _incrementCounter(),
           Navigator.pop(context),
           Navigator.pop(context),
         }, 

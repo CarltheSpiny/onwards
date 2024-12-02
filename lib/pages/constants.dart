@@ -92,8 +92,7 @@ const ColorProfile strawberryFlavor = ColorProfile(
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage("/images/rad_red.jpg"), 
-        repeat: ImageRepeat.repeat,
-        scale: 0.4
+        fit: BoxFit.fitWidth
       ),
       color: Color.fromARGB(255, 197, 81, 187),
     ),
