@@ -1,5 +1,7 @@
+import 'dart:math';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/reading/speech_to_text_helper.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/home.dart';
@@ -36,11 +38,26 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
       cacheOptions: const SharedPreferencesWithCacheOptions(
         allowList: <String>{'correct'}
       ));
+  // ignore: unused_field
   late Future<int> _counter;
   OverlayEntry? entry;
+  // confetti animation
+  late ConfettiController _bottom_right_controller1;
+  late ConfettiController _bottom_right_controller2;
+  late ConfettiController _bottom_left_controller1;
+  late ConfettiController _bottom_left_controller2;
+  final globalGravity = 0.10;
+  final maxBlastForce = 60.0;
+  final minBlastForce = 50.0;
 
   @override
   void initState() {
+    
+    // confetti controller states
+    _bottom_right_controller1 = ConfettiController(duration: const Duration(seconds: 5));
+    _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
+    _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
+    _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
     super.initState();
     _speech = stt.SpeechToText();
     _counter = _prefs.then((SharedPreferencesWithCache prefs) {
@@ -134,6 +151,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     if (showOverlay) {
       return showDialog(
         context: context, 
+        barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
             actions: answerDialogList,
@@ -147,7 +165,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
       );
     } else {
       return showDialog(
-        context: context, 
+        context: context,
         builder: (context) {
           return AlertDialog(
             content: Text(
@@ -193,95 +211,162 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
 
     void showDisplay() {
       WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+      _bottom_left_controller1.play();
+      _bottom_left_controller2.play();
+      _bottom_right_controller1.play();
+      _bottom_right_controller2.play();
     }
     
     bool valid;
-    return Align(
-      alignment: Alignment.center,
-      child: Column(
-        children: [
-          Text(
-            widget.titleText,
-            style: TextStyle(
-              color: widget.colorProfile.textColor, 
-              fontSize: 30,
-            ),
-            textAlign: TextAlign.center,
+    return Stack(
+      children: [
+        Align(
+          alignment: Alignment.bottomRight,
+          child: ConfettiWidget(
+            confettiController: _bottom_right_controller1,
+            blastDirection: (4*pi)/3, // 7 pi /4
+            emissionFrequency: 0.000001,
+            particleDrag: 0.05,
+            numberOfParticles: 25,
+            gravity: globalGravity,
+            minBlastForce: minBlastForce,
+            maxBlastForce: maxBlastForce,
+            shouldLoop: false,
+
           ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              widget.questionLabel,
-              style: TextStyle(
-                color: widget.colorProfile.textColor, 
-                fontSize: 30,
-              ),
-            ),
+        ),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: ConfettiWidget(
+            confettiController: _bottom_right_controller2,
+            blastDirection: (7*pi)/6, // 7 pi /4
+            emissionFrequency: 0.000001,
+            particleDrag: 0.05,
+            numberOfParticles: 50,
+            gravity: globalGravity,
+            minBlastForce: minBlastForce,
+            maxBlastForce: maxBlastForce,
+            shouldLoop: false,
+
           ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Your phrase",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: widget.colorProfile.textColor
-                  ),
-                ),
-                Text(
-                  _transcribedText,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: widget.colorProfile.textColor
-                  ),
-                ),
-                const SizedBox(height: 20),
-                FloatingActionButton(
-                  onPressed: _listen,
-                  backgroundColor: widget.colorProfile.buttonColor,
-                  child: Icon(_isListening ? Icons.mic : Icons.mic_none),
-                ),
-              ],
-            ),
+        ),
+        Align(
+          alignment: Alignment.bottomLeft,
+          child: ConfettiWidget(
+            confettiController: _bottom_left_controller1,
+            blastDirection: (11*pi)/6,
+            emissionFrequency: 0.000001,
+            particleDrag: 0.05,
+            numberOfParticles: 50,
+            gravity: globalGravity,
+            minBlastForce: minBlastForce,
+            maxBlastForce: maxBlastForce,
+            shouldLoop: false,
+
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        ),
+        Align(
+          alignment: Alignment.bottomLeft,
+          child: ConfettiWidget(
+            confettiController: _bottom_left_controller2,
+            blastDirection: (5*pi)/3,
+            emissionFrequency: 0.000001,
+            particleDrag: 0.05,
+            numberOfParticles: 25,
+            gravity: globalGravity,
+            minBlastForce: minBlastForce,
+            maxBlastForce: maxBlastForce,
+            shouldLoop: false,
+          ),
+        ),
+        Align(
+          alignment: Alignment.center,
+          child: Column(
             children: [
-              TextButton(
-                onPressed: _isListening || _speech.isListening ? null : () => {
-                  valid = validateAnswer(),
-                  if (valid) {
-                    showDisplay()
-                  } else {
-                    _showCorrectDialog(valid)
-                  }
-                },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
+              Text(
+                widget.titleText,
+                style: TextStyle(
+                  color: widget.colorProfile.textColor, 
+                  fontSize: 30,
                 ),
-                child: Text(
-                  'Check Answer',
-                  style: TextStyle(color: widget.colorProfile.contrastTextColor),
-                )
+                textAlign: TextAlign.center,
               ),
-              TextButton(
-                onPressed: () => {
-                  clearText()
-                },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
-                ),
+              Padding(
+                padding: const EdgeInsets.all(8),
                 child: Text(
-                  'Clear all answers',
-                  style: TextStyle(color: widget.colorProfile.contrastTextColor),
-                )
+                  widget.questionLabel,
+                  style: TextStyle(
+                    color: widget.colorProfile.textColor, 
+                    fontSize: 30,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Your phrase",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: widget.colorProfile.textColor
+                      ),
+                    ),
+                    Text(
+                      _transcribedText,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: widget.colorProfile.textColor
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FloatingActionButton(
+                      onPressed: _listen,
+                      backgroundColor: widget.colorProfile.buttonColor,
+                      child: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: _isListening || _speech.isListening ? null : () => {
+                      valid = validateAnswer(),
+                      if (valid) {
+                        showDisplay()
+                      } else {
+                        _showCorrectDialog(valid)
+                      }
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
+                    ),
+                    child: Text(
+                      'Check Answer',
+                      style: TextStyle(color: widget.colorProfile.contrastTextColor),
+                    )
+                  ),
+                  TextButton(
+                    onPressed: () => {
+                      clearText()
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
+                    ),
+                    child: Text(
+                      'Clear all answers',
+                      style: TextStyle(color: widget.colorProfile.contrastTextColor),
+                    )
+                  )
+                ],
               )
             ],
-          )
-        ],
-      ),
+          ),
+        )
+      ],
     );
   }
 }

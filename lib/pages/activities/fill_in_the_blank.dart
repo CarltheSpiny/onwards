@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/constants.dart';
@@ -76,6 +79,14 @@ class GameFormState extends State<GameForm> {
       ));
   late Future<int> _counter;
   OverlayEntry? entry;
+  // confetti animation
+  late ConfettiController _bottom_right_controller1;
+  late ConfettiController _bottom_right_controller2;
+  late ConfettiController _bottom_left_controller1;
+  late ConfettiController _bottom_left_controller2;
+  final globalGravity = 0.10;
+  final maxBlastForce = 60.0;
+  final minBlastForce = 50.0;
 
   @override
   void initState() {
@@ -83,7 +94,22 @@ class GameFormState extends State<GameForm> {
     _counter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
     });
+    // confetti controller states
+    _bottom_right_controller1 = ConfettiController(duration: const Duration(seconds: 5));
+    _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
+    _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
+    _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
+    
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _bottom_right_controller1.dispose();
+    _bottom_right_controller2.dispose();
+    _bottom_left_controller1.dispose();
+    _bottom_left_controller2.dispose();
+    super.dispose();
   }
 
   Future<void> _incrementCounter() async {
@@ -132,6 +158,7 @@ class GameFormState extends State<GameForm> {
     if (showOverlay) {
       return showDialog(
         context: context, 
+        barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
             actions: answerDialogList,
@@ -146,6 +173,7 @@ class GameFormState extends State<GameForm> {
     } else {
       return showDialog(
         context: context, 
+        barrierDismissible: true,
         builder: (context) {
           return AlertDialog(
             content: Text(
@@ -252,10 +280,14 @@ class GameFormState extends State<GameForm> {
 
   void showDisplay() {
     WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+      _bottom_left_controller1.play();
+      _bottom_left_controller2.play();
+      _bottom_right_controller1.play();
+      _bottom_right_controller2.play();
   }
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
-    List<ButtonStyleButton> dynamicButtonList = <ButtonStyleButton> [];
+    List<Widget> dynamicButtonList = <Widget> [];
     List<String> splitter = widget.blankQuestLabel.split(" ");
 
     for (String option in widget.buttonOptions) {
@@ -283,95 +315,162 @@ class GameFormState extends State<GameForm> {
           style: TextStyle(color: widget.colorProfile.contrastTextColor),
         ),
       );
-      dynamicButtonList.add(button);
+      Padding padding = Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: button,
+      );
+      dynamicButtonList.add(padding);
     }
     
     // Render the form here
     return Container(
       decoration: widget.colorProfile.backBoxDecoration,
-      child: Align(
-        alignment: Alignment.center,
-        child: Column(
-          children: [
-            Text(
-              "Use the blocks below to form the written form of the expression:",
-              style: TextStyle(
-                color: widget.colorProfile.textColor, 
-                fontSize: 30,
-              ),
-              textAlign: TextAlign.center,
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.bottomRight,
+            child: ConfettiWidget(
+              confettiController: _bottom_right_controller1,
+              blastDirection: (4*pi)/3, // 7 pi /4
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 25,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
+
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                widget.questionLabel,
-                style: TextStyle(
-                  color: widget.colorProfile.textColor, 
-                  fontSize: 30,
-                  
-                ),
-              ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: ConfettiWidget(
+              confettiController: _bottom_right_controller2,
+              blastDirection: (7*pi)/6, // 7 pi /4
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 50,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
+
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column( // attempt to render the selected answers as they are moved into the list
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: renderConditionalLabels(splitter),
-                  ),
-                ],
-              )
+          ),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: ConfettiWidget(
+              confettiController: _bottom_left_controller1,
+              blastDirection: (11*pi)/6,
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 50,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
+
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: dynamicButtonList,
-              ),
+          ),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: ConfettiWidget(
+              confettiController: _bottom_left_controller2,
+              blastDirection: (5*pi)/3,
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 25,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: Column(
               children: [
+                Text(
+                  "Use the blocks below to form the written form of the expression:",
+                  style: TextStyle(
+                    color: widget.colorProfile.textColor, 
+                    fontSize: 30,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: TextButton(
-                    onPressed: () => {
-                      if (validateAnswer()) {
-                        showDisplay()
-                      } else {
-                        _showCorrectDialog(validateAnswer())
-                      }
-                    }, 
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    widget.questionLabel,
+                    style: TextStyle(
+                      color: widget.colorProfile.textColor, 
+                      fontSize: 30,
+                      
                     ),
-                    child: Text(
-                      'Check Answer',
-                      style: TextStyle(color: widget.colorProfile.contrastTextColor),
-                    )
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column( // attempt to render the selected answers as they are moved into the list
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: renderConditionalLabels(splitter),
+                      ),
+                    ],
                   )
                 ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      currentCount = 0;
-                      _selectedAnswers.clear();
-                    });
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    children: dynamicButtonList,
                   ),
-                  child: Text(
-                    'Clear all answers',
-                    style: TextStyle(color: widget.colorProfile.contrastTextColor),
-                    )
-                  )
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: TextButton(
+                        onPressed: () => {
+                          if (validateAnswer()) {
+                            showDisplay()
+                          } else {
+                            _showCorrectDialog(validateAnswer())
+                          }
+                        }, 
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
+                        ),
+                        child: Text(
+                          'Check Answer',
+                          style: TextStyle(color: widget.colorProfile.contrastTextColor),
+                        )
+                      )
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          currentCount = 0;
+                          _selectedAnswers.clear();
+                        });
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
+                      ),
+                      child: Text(
+                        'Clear all answers',
+                        style: TextStyle(color: widget.colorProfile.contrastTextColor),
+                        )
+                      )
+                  ],
+                )
               ],
-            )
-          ],
-        ),
-      ),
+            ),
+          ),
+        ],
+      )
     );
     
   }

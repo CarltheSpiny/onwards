@@ -8,6 +8,7 @@ import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/activities/fill_in_the_blank.dart';
 import 'package:onwards/pages/activities/playback/playback.dart';
+import 'package:onwards/pages/confetti.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -414,6 +415,18 @@ class HomePageState extends State<HomePage> {
                     }
                 }
               }
+            ),
+            ElevatedButton(
+              style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
+              onPressed: () => {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ConfettiSample(),))
+              }, 
+              child: Text(
+                "Test the confetti page",
+                style: TextStyle(
+                  color: currentProfile.textColor
+                ),
+              )
             ),
           ],
         )

@@ -87,7 +87,7 @@ class _OverlayBannerState extends State<OverlayBanner>
           height: 200,
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: AssetImage("/images/correct_overlay.png"),
+              image: AssetImage("/images/confetti_loop.gif"),
               fit: BoxFit.fitHeight
             ),
           ),
