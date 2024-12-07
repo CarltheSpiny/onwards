@@ -122,10 +122,16 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   }
 
   void clearText() {
+    stopEngine();
+    setState(() {
+      _transcribedText = defaultTranscribedText;
+    });
+  }
+
+  void stopEngine() {
     setState(() {
       _isListening = false;
       _speech.cancel();
-      _transcribedText = defaultTranscribedText;
     });
   }
 
@@ -333,7 +339,7 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
-                    onPressed: _isListening || _speech.isListening ? null : () => {
+                    onPressed: _isListening || _speech.isListening ? stopEngine : () => {
                       valid = validateAnswer(),
                       if (valid) {
                         showDisplay()

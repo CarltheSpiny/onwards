@@ -41,6 +41,7 @@ dependencies:
   logger: ^2.4.0
   flutter_tts: ^4.2.0
   confetti: ^0.8.0
+  flutter_simple_calculator: ^2.3.0
 
 dev_dependencies:
   flutter_test:

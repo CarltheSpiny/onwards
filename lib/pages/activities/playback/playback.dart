@@ -7,10 +7,12 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/activities/jumble.dart';
+import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/activities/playback/player_widget.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:onwards/pages/tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PlaybackActivityScreen extends StatelessWidget {
@@ -29,6 +31,7 @@ class PlaybackActivityScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Playback and Answer Game'),
         backgroundColor: colorProfile.headerColor,
+        actions: const [CalcButton()],
       ),
       body: Container(
         decoration: colorProfile.backBoxDecoration,
@@ -36,7 +39,7 @@ class PlaybackActivityScreen extends StatelessWidget {
           PlaybackGameForm(
             audioSource: AssetSource(playbackData.webAudioLink),
             answers: playbackData.multiAcceptedAnswers, 
-            questionLabel: "Debug: ${playbackData.audioTranscript}", 
+            questionLabel: playbackData.audioTranscript, 
             maxSelectedAnswers: playbackData.getMinSelection(), 
             buttonOptions: playbackData.optionList,
             titleQuestion: playbackData.writtenPrompt,
@@ -455,22 +458,8 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                     ),
                     textAlign: TextAlign.center,
                 ),
-                // Render the question label
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: widget.showArithmitic ? Text(
-                    widget.questionLabel,
-                    style: TextStyle(
-                      color: widget.colorProfile.textColor, 
-                      fontSize: 30,
-                      
-                    ),
-                  ) : null,
-                ),
-                SoundPlayerWidget(
-                  audioSource: widget.audioSource, 
-                  colorProfile: widget.colorProfile
-                ),
+               
+                TTSRunner(voiceLine: widget.questionLabel),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column( 

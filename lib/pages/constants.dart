@@ -27,7 +27,7 @@ const ColorProfile lightFlavor = ColorProfile(
     headerColor: Color.fromARGB(255, 112, 112, 112),
     buttonColor: Colors.grey, 
     textColor: Color.fromARGB(255, 255, 255, 255),
-    contrastTextColor: Color.fromARGB(255, 255, 251, 0),
+    contrastTextColor: Color.fromARGB(255, 255, 255, 255),
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
@@ -105,7 +105,7 @@ const ColorProfile bananaFlavor = ColorProfile(
     headerColor: Colors.yellow,
     buttonColor: Color.fromARGB(255, 237, 226, 9), 
     textColor: Colors.black,
-    contrastTextColor: Colors.white,
+    contrastTextColor: Colors.black,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(

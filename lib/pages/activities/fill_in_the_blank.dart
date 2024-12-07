@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/game_series.dart';
+import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
@@ -28,6 +29,7 @@ class FillInActivityScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Fill in the Blank Game'),
         backgroundColor: colorProfile.headerColor,
+        actions: const [CalcButton()],
       ),
       body: GameForm(
         answers: fillBlanksGameData.multiAcceptedAnswers, 

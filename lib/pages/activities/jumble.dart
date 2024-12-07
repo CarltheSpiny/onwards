@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/game_series.dart';
+import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +29,7 @@ class JumbleActivityScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Word Jumble Game'),
         backgroundColor: colorProfile.headerColor,
+        actions: const [CalcButton()],
       ),
       body: Center(
         child: GameForm(

@@ -8,8 +8,9 @@ import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/activities/fill_in_the_blank.dart';
 import 'package:onwards/pages/activities/playback/playback.dart';
-import 'package:onwards/pages/confetti.dart';
+import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const ImageProvider placeholderImage = AssetImage('assets/images/placeholder.png');
@@ -419,7 +420,8 @@ class HomePageState extends State<HomePage> {
             ElevatedButton(
               style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
               onPressed: () => {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ConfettiSample(),))
+                null
+                // Navigator.of(context).push(MaterialPageRoute(builder: (context) => TTSRunner(voiceLine: "No line loaded"),))
               }, 
               child: Text(
                 "Test the confetti page",
