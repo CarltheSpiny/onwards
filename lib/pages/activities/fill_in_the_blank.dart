@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
@@ -38,6 +37,7 @@ class FillInActivityScreen extends StatelessWidget {
         maxSelectedAnswers: fillBlanksGameData.getMinSelection(),
         buttonOptions: fillBlanksGameData.optionList,
         colorProfile: colorProfile,
+        skills: fillBlanksGameData.skills,
       ),
     );
   }
@@ -55,7 +55,8 @@ class GameForm extends StatefulWidget {
     required this.blankQuestLabel,
     required this.maxSelectedAnswers,
     required this.buttonOptions,
-    required this.colorProfile
+    required this.colorProfile,
+    required this.skills
   });
 
   final ColorProfile colorProfile;
@@ -64,6 +65,7 @@ class GameForm extends StatefulWidget {
   final String blankQuestLabel;
   final int maxSelectedAnswers;
   final List<String> buttonOptions;
+  final List<String> skills;
 
   @override
   GameFormState createState() => GameFormState();
@@ -77,9 +79,17 @@ class GameFormState extends State<GameForm> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct'}
+        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics'}
       ));
-  late Future<int> _counter;
+  late Future<int> correctCounter;
+  late Future<int> missedCounter;
+  late Future<List<String>> masteredTopicList;
+  late Future<List<String>> weakTopicList;
+  late Future<int> themeId;
+  ColorProfile? cachedTheme;
+  // placeholder
+  ColorProfile currentProfile = lightFlavor;
+
   OverlayEntry? entry;
   // confetti animation
   late ConfettiController _bottom_right_controller1;
@@ -92,15 +102,31 @@ class GameFormState extends State<GameForm> {
 
   @override
   void initState() {
+    Random random = Random();
+    widget.buttonOptions.shuffle(random);
     maxSelection = widget.maxSelectedAnswers;
-    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+    correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
+    });
+    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('missed') ?? 0;
+    });
+    themeId = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('theme_id') ?? 0;
+    });
+
+    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('mastered_topics') ?? <String>[];
+    });
+    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('weak_topics') ?? <String>[];
     });
     // confetti controller states
     _bottom_right_controller1 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
+    loadTheme();
     
     super.initState();
   }
@@ -114,13 +140,68 @@ class GameFormState extends State<GameForm> {
     super.dispose();
   }
 
+  Future<void> loadTheme() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    int? themeIndex = (prefs.getInt('theme_id') ?? 0);
+    setState(() {
+      cachedTheme = _getProfileByIndex(themeIndex);
+      logger.i("Loaded theme: ${cachedTheme?.idKey}");
+    });
+    // check if cached theme is diffrent from the current one
+    if (cachedTheme?.idKey != widget.colorProfile.idKey) {
+      logger.w("Cached theme did not match the current one. Current: ${widget.colorProfile.idKey}, Cached: ${cachedTheme?.idKey}");
+      currentProfile = cachedTheme!;
+    } else {
+      logger.i("Both themes match");
+      currentProfile = widget.colorProfile;
+    }
+  }
+
+  ColorProfile _getProfileByIndex(int index) {
+    switch(index) {
+        case 0:
+          return lightFlavor;
+        case 1:
+          return darkFlavor;
+        case 2:
+          return plainFlavor;
+        case 3:
+          return mintFlavor;
+        case 4:
+          return strawberryFlavor;
+        case 5:
+          return bananaFlavor;
+        case 6:
+          return peanutFlavor;
+        default:
+          return lightFlavor;
+      }
+  }
+
   Future<void> _incrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     final int counter = (prefs.getInt('correct') ?? 0) + 1;
     setState(() {
-      _counter = prefs.setInt('correct', counter).then((_) {
+      correctCounter = prefs.setInt('correct', counter).then((_) {
         logger.i('Updating correct count...');
         return counter;
+      });
+    });
+  }
+
+  Future<void> addMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    if (mastered.contains(topic)) {
+      logger.i("The skill mastery list already contained: $topic");
+      return;
+    } else {
+      mastered.add(topic);
+    }
+
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
       });
     });
   }
@@ -144,14 +225,17 @@ class GameFormState extends State<GameForm> {
   Future _showCorrectDialog(bool showOverlay) {
     List<Widget> answerDialogList = [
       TextButton(
-        onPressed: () => {
-          _incrementCounter(),
-          Navigator.pop(context),
-          Navigator.pop(context),
+        onPressed: () async {
+          _incrementCounter();
+          for (String skill in widget.skills) {
+            addMasteredTopic(skill);
+          }
+          Navigator.pop(context);
+          Navigator.pop(context);
         }, 
         child: Text('Continue', 
           style: TextStyle(
-              color: widget.colorProfile.textColor,
+              color: currentProfile.textColor,
             ),
           ),
       ),
@@ -166,9 +250,9 @@ class GameFormState extends State<GameForm> {
             actions: answerDialogList,
             title: Text('Way to go!', 
             style: TextStyle(
-                color: widget.colorProfile.textColor,
+                color: currentProfile.textColor,
               ),),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -181,16 +265,16 @@ class GameFormState extends State<GameForm> {
             content: Text(
               "Click any where to return to the problem",
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
             title: Text(
               'Try again...',
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -210,7 +294,7 @@ class GameFormState extends State<GameForm> {
                 _selectedAnswers[countForSelected],
                 style: TextStyle(
                   fontSize: 18.0,
-                  color: widget.colorProfile.contrastTextColor
+                  color: currentProfile.contrastTextColor
                 ),
               )
             )
@@ -224,7 +308,7 @@ class GameFormState extends State<GameForm> {
                 part,
                 style: TextStyle(
                   fontSize: 18.0,
-                  color: widget.colorProfile.textColor
+                  color: currentProfile.textColor
                 ),
               ),
             )
@@ -238,7 +322,7 @@ class GameFormState extends State<GameForm> {
               part,
               style: TextStyle(
                 fontSize: 18.0,
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
           )
@@ -250,7 +334,7 @@ class GameFormState extends State<GameForm> {
             " ",
             style: TextStyle(
               fontSize: 18.0,
-              color: widget.colorProfile.textColor
+              color: currentProfile.textColor
             ),
           ),
         )
@@ -261,6 +345,7 @@ class GameFormState extends State<GameForm> {
 
   @override
   Widget build(BuildContext context) {
+    
     void hideOverlay() {
       entry?.remove();
       entry = null;
@@ -280,13 +365,13 @@ class GameFormState extends State<GameForm> {
       overlay.insert(entry!);
     }
 
-  void showDisplay() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
-      _bottom_left_controller1.play();
-      _bottom_left_controller2.play();
-      _bottom_right_controller1.play();
-      _bottom_right_controller2.play();
-  }
+    void showDisplay() {
+      WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
+        _bottom_left_controller1.play();
+        _bottom_left_controller2.play();
+        _bottom_right_controller1.play();
+        _bottom_right_controller2.play();
+    }
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
     List<Widget> dynamicButtonList = <Widget> [];
@@ -303,7 +388,7 @@ class GameFormState extends State<GameForm> {
           })
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: widget.colorProfile.buttonColor,
+          backgroundColor: currentProfile.buttonColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12)
           ),
@@ -314,7 +399,7 @@ class GameFormState extends State<GameForm> {
         ),
         child: Text(
           option, 
-          style: TextStyle(color: widget.colorProfile.contrastTextColor),
+          style: TextStyle(color: currentProfile.contrastTextColor),
         ),
       );
       Padding padding = Padding(
@@ -326,7 +411,7 @@ class GameFormState extends State<GameForm> {
     
     // Render the form here
     return Container(
-      decoration: widget.colorProfile.backBoxDecoration,
+      decoration: currentProfile.backBoxDecoration,
       child: Stack(
         children: [
           Align(
@@ -395,7 +480,7 @@ class GameFormState extends State<GameForm> {
                 Text(
                   "Use the blocks below to form the written form of the expression:",
                   style: TextStyle(
-                    color: widget.colorProfile.textColor, 
+                    color: currentProfile.textColor, 
                     fontSize: 30,
                   ),
                   textAlign: TextAlign.center,
@@ -405,7 +490,7 @@ class GameFormState extends State<GameForm> {
                   child: Text(
                     widget.questionLabel,
                     style: TextStyle(
-                      color: widget.colorProfile.textColor, 
+                      color: currentProfile.textColor, 
                       fontSize: 30,
                       
                     ),
@@ -443,11 +528,11 @@ class GameFormState extends State<GameForm> {
                           }
                         }, 
                         style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
+                          backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
                         ),
                         child: Text(
                           'Check Answer',
-                          style: TextStyle(color: widget.colorProfile.contrastTextColor),
+                          style: TextStyle(color: currentProfile.contrastTextColor),
                         )
                       )
                     ),
@@ -459,11 +544,11 @@ class GameFormState extends State<GameForm> {
                         });
                       },
                       style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
+                        backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
                       ),
                       child: Text(
                         'Clear all answers',
-                        style: TextStyle(color: widget.colorProfile.contrastTextColor),
+                        style: TextStyle(color: currentProfile.contrastTextColor),
                         )
                       )
                   ],

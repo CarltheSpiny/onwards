@@ -1,4 +1,7 @@
+import 'package:onwards/pages/home.dart';
+
 String convertNumbersAndSymbolsToWords(String input) {
+  logger.i("Attempting to parse this phrase: $input");
   // Map for basic symbols
   final Map<String, String> symbolConversions = {
     '@': 'at',
@@ -10,7 +13,7 @@ String convertNumbersAndSymbolsToWords(String input) {
     '+' : 'plus',
     '-' : 'subtract',
     '/' : 'divided by',
-    '*' : 'times'
+    '*' : 'times',
     // Add more symbols as needed
   };
 

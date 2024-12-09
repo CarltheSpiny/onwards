@@ -5,11 +5,9 @@ import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/constants.dart';
-import 'package:onwards/pages/activities/playback/player_widget.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:onwards/pages/tts.dart';
@@ -45,55 +43,10 @@ class PlaybackActivityScreen extends StatelessWidget {
             titleQuestion: playbackData.writtenPrompt,
             showArithmitic: true,
             colorProfile: colorProfile,
+            skills: playbackData.skills,
           ),
       )
     );
-  }
-}
-
-class SoundPlayerWidget extends StatefulWidget {
-  final Source audioSource;
-  final ColorProfile colorProfile;
-
-  const SoundPlayerWidget({
-    super.key, 
-    required this.audioSource,
-    required this.colorProfile
-  });
-  
-  @override
-  SoundPlayerWidgetState createState() => SoundPlayerWidgetState();
-}
-
-class SoundPlayerWidgetState extends State<SoundPlayerWidget> {
-  late AudioPlayer _audioPlayer;
-  late Source audioSource;
-
-  @override
-  void initState() {
-    super.initState();
-    logger.i("Initialized the audio service");
-    _audioPlayer = AudioPlayer();
-    audioSource = widget.audioSource;
-  }
-
-  Future<void> playSound() async {
-    await _audioPlayer.play(audioSource);
-  }
-
-  @override
-  void dispose() {
-    logger.i("Disposed the audio service object");
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _audioPlayer.setSource(audioSource);
-    return PlayerWidget(
-      player: _audioPlayer,
-      colorProfile: widget.colorProfile,);
   }
 }
 
@@ -111,7 +64,8 @@ class PlaybackGameForm extends StatefulWidget {
     required this.titleQuestion,
     required this.showArithmitic,
     required this.colorProfile,
-    required this.audioSource
+    required this.audioSource,
+    required this.skills
   });
 
   final AssetSource audioSource;
@@ -126,6 +80,7 @@ class PlaybackGameForm extends StatefulWidget {
   final List<String> buttonOptions;
   final String titleQuestion;
   final bool showArithmitic;
+  final List<String> skills;
 
   @override
   PlaybackGameFormState createState() => PlaybackGameFormState();
@@ -139,9 +94,17 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct'}
+        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics'}
       ));
-  late Future<int> _counter;
+  late Future<int> correctCounter;
+  late Future<int> missedCounter;
+  late Future<List<String>> masteredTopicList;
+  late Future<List<String>> weakTopicList;
+  late Future<int> themeId;
+  ColorProfile? cachedTheme;
+  // placeholder
+  ColorProfile currentProfile = lightFlavor;
+
   OverlayEntry? entry;
   // confetti animation
   late ConfettiController _bottom_right_controller1;
@@ -154,12 +117,32 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
 
   @override
   void initState() {
+    Random random = Random();
+    widget.buttonOptions.shuffle(random);
     maxSelection = widget.maxSelectedAnswers;
+    
+    correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('correct') ?? 0;
+    });
+    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('missed') ?? 0;
+    });
+    themeId = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('theme_id') ?? 0;
+    });
+    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('mastered_topics') ?? <String>[];
+    });
+    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('weak_topics') ?? <String>[];
+    });
+
     // confetti controller states
     _bottom_right_controller1 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
+    loadTheme();
     super.initState();
   }
 
@@ -172,13 +155,68 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
     super.dispose();
   }
 
+  Future<void> loadTheme() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    int? themeIndex = (prefs.getInt('theme_id') ?? 0);
+    setState(() {
+      cachedTheme = _getProfileByIndex(themeIndex);
+      logger.i("Loaded theme: ${cachedTheme?.idKey}");
+    });
+    // check if cached theme is diffrent from the current one
+    if (cachedTheme?.idKey != widget.colorProfile.idKey) {
+      logger.w("Cached theme did not match the current one. Current: ${widget.colorProfile.idKey}, Cached: ${cachedTheme?.idKey}");
+      currentProfile = cachedTheme!;
+    } else {
+      logger.i("Both themes match");
+      currentProfile = widget.colorProfile;
+    }
+  }
+
+  ColorProfile _getProfileByIndex(int index) {
+    switch(index) {
+        case 0:
+          return lightFlavor;
+        case 1:
+          return darkFlavor;
+        case 2:
+          return plainFlavor;
+        case 3:
+          return mintFlavor;
+        case 4:
+          return strawberryFlavor;
+        case 5:
+          return bananaFlavor;
+        case 6:
+          return peanutFlavor;
+        default:
+          return lightFlavor;
+      }
+  }
+
   Future<void> _incrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     final int counter = (prefs.getInt('correct') ?? 0) + 1;
     setState(() {
-      _counter = prefs.setInt('correct', counter).then((_) {
+      correctCounter = prefs.setInt('correct', counter).then((_) {
         logger.i('Updating correct count...');
         return counter;
+      });
+    });
+  }
+
+  Future<void> addMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    if (mastered.contains(topic)) {
+      logger.i("The skill mastery list already contained: $topic");
+      return;
+    } else {
+      mastered.add(topic);
+    }
+
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
       });
     });
   }
@@ -228,14 +266,17 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
   Future _showCorrectDialog(int errorIndex) {
     List<Widget> answerDialogList = [
       TextButton(
-        onPressed: () => {
-          _incrementCounter(),
-          Navigator.pop(context), // dialog
-          Navigator.pop(context), // page
+        onPressed: () async {
+          _incrementCounter();
+          for (String skill in widget.skills) {
+            addMasteredTopic(skill);
+          }
+          Navigator.pop(context); // dialog
+          Navigator.pop(context); // page
         }, 
         child: Text('Continue', 
           style: TextStyle(
-            color: widget.colorProfile.textColor,
+            color: currentProfile.textColor,
           ),
         ),
       ),
@@ -251,10 +292,10 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
             actions: answerDialogList,
             title: Text('Way to go!',
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -268,16 +309,16 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
             content: Text(
               "Please select more answers",
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
             title: Text(
               'Incomplete Answer',
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -291,16 +332,16 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
             content: Text(
               "Incorrect Answer at ${_selectedAnswers[errorIndex]}",
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
             title: Text(
               'Try again',
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -318,7 +359,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
           part,
           style: TextStyle(
             fontSize: 18.0,
-            color: widget.colorProfile.textColor
+            color: currentProfile.textColor
           ),
         )
       ));
@@ -349,7 +390,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
           }, 
           isDisabled: _selectedAnswers.contains(option), 
           label: option,
-          colorProfile: widget.colorProfile,
+          colorProfile: currentProfile,
         ),
       );
       
@@ -384,7 +425,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
   }
     // Render the form here
     return Container(
-      decoration: widget.colorProfile.backBoxDecoration,
+      decoration: currentProfile.backBoxDecoration,
       child: Stack(
         children: [
           Align(
@@ -453,7 +494,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                 Text(
                   widget.titleQuestion,
                   style: TextStyle(
-                      color: widget.colorProfile.textColor, 
+                      color: currentProfile.textColor, 
                       fontSize: 30,
                     ),
                     textAlign: TextAlign.center,
@@ -494,12 +535,12 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                         }
                       }, 
                       style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
+                        backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
                       ),
                       child: Text(
                         'Check Answer',
                           style: TextStyle(
-                            color: widget.colorProfile.contrastTextColor
+                            color: currentProfile.contrastTextColor
                           ),
                       ),
                       
@@ -509,12 +550,12 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                         clearAnswers()
                       },
                       style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
+                        backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
                       ),
                       child: Text(
                         'Clear all answers',
                         style: TextStyle(
-                          color: widget.colorProfile.contrastTextColor),
+                          color: currentProfile.contrastTextColor),
                         )
                       )
                   ],

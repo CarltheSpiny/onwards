@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,8 @@ import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/activities/fill_in_the_blank.dart';
 import 'package:onwards/pages/activities/playback/playback.dart';
-import 'package:onwards/pages/calculator.dart';
 import 'package:onwards/pages/constants.dart';
-import 'package:onwards/pages/tts.dart';
+import 'package:onwards/pages/game_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const ImageProvider placeholderImage = AssetImage('assets/images/placeholder.png');
@@ -18,6 +18,8 @@ const desktopPadding = 81.0;
 const homeWidth = 1400.0;
 const desktopMargin = 8.0;
 
+GameDataBank bank = GameDataBank();
+HashMap<String, String> skillMap = HashMap();
 
 // Image is currently 4:3 ratio
 const itemWidth = 396.0; // controls the width of the card (should match image)
@@ -31,8 +33,46 @@ class HomeApp extends StatelessWidget {
 
   final ColorProfile colorProfile = lightFlavor;
 
+  void addSkills() {
+    skillMap.addAll(
+      (
+        {
+          "single_digit_addition" : "Addition with Single Digits",
+          "word_problem_written_form" : "Written Form from Word Problems",
+          "three_place_addition" : "Addition with Three Digits/Places",
+          "multiple_operations" : "Expressions with Multiple Operations",
+          "three_place_subtraction" : "Subtraction with Three Digits/Places",
+          "written_four_place_number_values" : "Numbers with Four Places in Written Form",
+          "written_three_place_number_values" : "Numbers with Three Places in Written Form",
+          "written_two_place_number_values" : "Numbers with Two Places in Written Form",
+          "written_decimals_two_number_places" : "Decimals with Two Places in Written Form",
+          "written_decimals_three_number_places" : "Decimals with Three Places in Written Form",
+          "single_digit_division" : "Division with Single Digits",
+          "spoken_written_form" : "Listening Written Form Expressions/Problems",
+          "money" : "Money Operations",
+          "single_digit_multiplication" : "Multiplication with Single Digits",
+          "self-spoken_written_form" : "Speaking in Written Form",
+          "two_place_multiplication" : "Multiplication with Two Digits/Places",
+          "three_or_more_place_multiplication" : "Multiplication with Three or More Digits/Places",
+          "four_or_more_number_places" : "Understanding Numbers with Four or More Digits/Places",
+          "four_or_more_place_addition" : "Addition with Four or More Digits/Places",
+          "two_place_addition" : "Addition with Two Digits/Places",
+          "written_three_number_places" : "Writing Numbers with Three Digits/Places in Written Form",
+          "fractions" : "Fraction Handling",
+          "two_place_division" : "Division with Two Digits/Places",
+          "number_sentences" : "Understanding Number Sentences",
+          "three_place_division" : "Division with Three Digits/Places",
+          "time" : "Time Operations",
+          "written_form": "Written Form"
+        }
+      )
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    bank.initBanks();
+    addSkills();
     logger.i('Loading app...');
     return const MaterialApp(
       title: 'Onwards',
@@ -52,15 +92,15 @@ class HomePageState extends State<HomePage> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'counter', 'correct', 'missed', 'mastered_topics', 'weak_topics'}
-      ));
-  late Future<int> _themeId;
-  late Future<int> _correctCounter;
+        allowList: <String>{'theme_id', 'correct', 'missed', 'mastered_topics', 'weak_topics'}
+      )
+    );
+
+  late Future<int> themeId;
+  late Future<int> correctCounter;
   late Future<int> missedCounter;
   late Future<List<String>> masteredTopicList;
   late Future<List<String>> weakTopicList;
-
-  int _externalCounter = 0;
 
   final maxThemes = 6;
 
@@ -68,7 +108,7 @@ class HomePageState extends State<HomePage> {
 
   Future<void> loadTheme() async {
     final SharedPreferencesWithCache prefs = await _prefs;
-    int? themeIndex = (prefs.getInt('counter') ?? 0);
+    int? themeIndex = (prefs.getInt('theme_id') ?? 0);
 
     setState(() {
       currentProfile = _getProfileByIndex(themeIndex);
@@ -98,12 +138,12 @@ class HomePageState extends State<HomePage> {
 
   Future<void> _incrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
-    if ((prefs.getInt('counter') ?? 0) >= maxThemes) {
+    if ((prefs.getInt('theme_id') ?? 0) >= maxThemes) {
       return;
     }
-    final int counter = (prefs.getInt('counter') ?? 0) + 1;
+    final int counter = (prefs.getInt('theme_id') ?? 0) + 1;
     setState(() {
-      _themeId = prefs.setInt('counter', counter).then((_) {
+      themeId = prefs.setInt('theme_id', counter).then((_) {
         logger.i('Updating theme...');
         currentProfile = _getProfileByIndex(counter);
         return counter;
@@ -145,13 +185,13 @@ class HomePageState extends State<HomePage> {
 
   Future<void> _decrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
-    if ((prefs.getInt('counter') ?? 0) <= 0) {
+    if ((prefs.getInt('theme_id') ?? 0) <= 0) {
       return;
     }
 
-    final int counter = (prefs.getInt('counter') ?? 0) - 1;
+    final int counter = (prefs.getInt('theme_id') ?? 0) - 1;
     setState(() {
-      _themeId = prefs.setInt('counter', counter).then((_) {
+      themeId = prefs.setInt('theme_id', counter).then((_) {
         logger.i('Updating theme...');
         currentProfile = _getProfileByIndex(counter);
         return counter;
@@ -159,21 +199,13 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _getExternalCounter() async {
-    final SharedPreferencesAsync prefs = SharedPreferencesAsync();
-    int? holder = (await prefs.getInt('externalCounter')) ?? 0;
-    setState(() {
-      _externalCounter = holder;
-    });
-  }
-
   @override
   void initState() {
     super.initState();
-    _themeId = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('counter') ?? 0;
+    themeId = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('theme_id') ?? 0;
     });
-    _correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+    correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
     });
     missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
@@ -187,7 +219,6 @@ class HomePageState extends State<HomePage> {
       return prefs.getStringList('weak_topics') ?? <String>[];
     });
 
-    _getExternalCounter();
     loadTheme();
   }
 
@@ -287,7 +318,7 @@ class HomePageState extends State<HomePage> {
               ),
             ),
             FutureBuilder<int>(
-              future: _themeId, 
+              future: themeId, 
               builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
                 switch (snapshot.connectionState) {
                   case ConnectionState.none:
@@ -356,75 +387,6 @@ class HomePageState extends State<HomePage> {
               }, 
               child: Text(
                 "Test the result page",
-                style: TextStyle(
-                  color: currentProfile.textColor
-                ),
-              )
-            ),
-            ElevatedButton(
-              onPressed: () => {
-                addMasteredTopic('time'),
-              }, 
-              child: const Text('Add a topic'),
-            ),
-            ElevatedButton(
-              onPressed: () => {
-                removeMasteredTopic('time'),
-              }, 
-              child: const Text('remove a topic'),
-            ),
-            FutureBuilder<int>(
-              future: _correctCounter, 
-              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.none:
-                  case ConnectionState.waiting:
-                    return const CircularProgressIndicator();
-                  case ConnectionState.active:
-                  case ConnectionState.done:
-                    if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}', style: TextStyle(color: currentProfile.textColor));
-                    } else {
-                      return Text(
-                        'Number of Correct Answers in this session: ${snapshot.data ?? 0}',
-                        style: TextStyle(
-                          color: currentProfile.textColor
-                        ),
-                      );
-                    }
-                }
-              }
-            ),
-            FutureBuilder<List<String>>(
-              future: masteredTopicList, 
-              builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.none:
-                  case ConnectionState.waiting:
-                    return const CircularProgressIndicator();
-                  case ConnectionState.active:
-                  case ConnectionState.done:
-                    if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}', style: TextStyle(color: currentProfile.textColor));
-                    } else {
-                      return Text(
-                        'Mastered topics for this session: ${snapshot.data ?? "No data"}',
-                        style: TextStyle(
-                          color: currentProfile.textColor
-                        ),
-                      );
-                    }
-                }
-              }
-            ),
-            ElevatedButton(
-              style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
-              onPressed: () => {
-                null
-                // Navigator.of(context).push(MaterialPageRoute(builder: (context) => TTSRunner(voiceLine: "No line loaded"),))
-              }, 
-              child: Text(
-                "Test the confetti page",
                 style: TextStyle(
                   color: currentProfile.textColor
                 ),

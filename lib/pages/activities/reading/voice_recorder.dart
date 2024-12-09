@@ -15,7 +15,8 @@ class AudioTranscriptionWidget extends StatefulWidget {
     required this.questionLabel,
     required this.titleText,
     required this.colorProfile,
-    this.useNumWordProtocol = true
+    this.useNumWordProtocol = true,
+    required this.skills
   });
 
   final ColorProfile colorProfile;
@@ -23,6 +24,7 @@ class AudioTranscriptionWidget extends StatefulWidget {
   final List<List<String>> acceptedAnswers;
   final String titleText;
   final bool useNumWordProtocol;
+  final List<String> skills;
 
   @override
   AudioTranscriptionWidgetState createState() => AudioTranscriptionWidgetState();
@@ -36,10 +38,18 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct'}
+        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics'}
       ));
-  // ignore: unused_field
-  late Future<int> _counter;
+
+  late Future<int> correctCounter;
+  late Future<int> missedCounter;
+  late Future<List<String>> masteredTopicList;
+  late Future<List<String>> weakTopicList;
+  late Future<int> themeId;
+  ColorProfile? cachedTheme;
+  // placeholder
+  ColorProfile currentProfile = lightFlavor;
+
   OverlayEntry? entry;
   // confetti animation
   late ConfettiController _bottom_right_controller1;
@@ -58,20 +68,87 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
     _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
+    loadTheme();
     super.initState();
+
     _speech = stt.SpeechToText();
-    _counter = _prefs.then((SharedPreferencesWithCache prefs) {
+    correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
     });
+    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('missed') ?? 0;
+    });
+
+    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('mastered_topics') ?? <String>[];
+    });
+    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getStringList('weak_topics') ?? <String>[];
+    });
+  }
+
+  Future<void> loadTheme() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    int? themeIndex = (prefs.getInt('theme_id') ?? 0);
+    setState(() {
+      cachedTheme = _getProfileByIndex(themeIndex);
+      logger.i("Loaded theme: ${cachedTheme?.idKey}");
+    });
+    // check if cached theme is diffrent from the current one
+    if (cachedTheme?.idKey != widget.colorProfile.idKey) {
+      logger.w("Cached theme did not match the current one. Current: ${widget.colorProfile.idKey}, Cached: ${cachedTheme?.idKey}");
+      currentProfile = cachedTheme!;
+    } else {
+      logger.i("Both themes match");
+      currentProfile = widget.colorProfile;
+    }
+  }
+
+  ColorProfile _getProfileByIndex(int index) {
+    switch(index) {
+        case 0:
+          return lightFlavor;
+        case 1:
+          return darkFlavor;
+        case 2:
+          return plainFlavor;
+        case 3:
+          return mintFlavor;
+        case 4:
+          return strawberryFlavor;
+        case 5:
+          return bananaFlavor;
+        case 6:
+          return peanutFlavor;
+        default:
+          return lightFlavor;
+      }
   }
 
   Future<void> _incrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     final int counter = (prefs.getInt('correct') ?? 0) + 1;
     setState(() {
-      _counter = prefs.setInt('correct', counter).then((_) {
+      correctCounter = prefs.setInt('correct', counter).then((_) {
         logger.i('Updating correct count...');
         return counter;
+      });
+    });
+  }
+
+  Future<void> addMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    if (mastered.contains(topic)) {
+      logger.i("The skill mastery list already contained: $topic");
+      return;
+    } else {
+      mastered.add(topic);
+    }
+
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
       });
     });
   }
@@ -86,12 +163,16 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
       );
       if (available && mounted) {
         setState(() => _isListening = true);
-        _speech.listen(onResult: (val) => setState(() {
-          _transcribedText = val.recognizedWords;
-          if (widget.useNumWordProtocol) {
-            _transcribedText = convertNumbersAndSymbolsToWords(_transcribedText);
-          }
-        }));
+          _speech.listen(
+            listenOptions: stt.SpeechListenOptions(partialResults: true),
+            onResult: (val) => setState(() {
+              _transcribedText = val.recognizedWords;
+              if (widget.useNumWordProtocol) {
+                _transcribedText = convertNumbersAndSymbolsToWords(_transcribedText);
+              }
+            }
+          )
+        );
       } else {
         setState(() => _isListening = false);
         _speech.stop();
@@ -138,17 +219,17 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
   Future _showCorrectDialog(bool showOverlay) {
     List<Widget> answerDialogList = [
       TextButton(
-        onPressed: () => {
-          // handle the listening state
-          setState(() => _isListening = false),
-          _speech.stop(),
-          _incrementCounter(),
-          Navigator.pop(context), // dialog
-          Navigator.pop(context), // page
+        onPressed: () async {
+          _incrementCounter();
+          for (String skill in widget.skills) {
+            addMasteredTopic(skill);
+          }
+          Navigator.pop(context); // dialog
+          Navigator.pop(context); // page
         }, 
         child: Text('Go back Home',
           style: TextStyle(
-            color: widget.colorProfile.textColor
+            color: currentProfile.textColor
           ),
         )
       ),
@@ -163,9 +244,9 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
             actions: answerDialogList,
             title: Text('Way to go!',
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -177,16 +258,16 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
             content: Text(
               "Click any where to return to the problem",
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
             title: Text(
               'Try again...',
               style: TextStyle(
-                color: widget.colorProfile.textColor
+                color: currentProfile.textColor
               ),
             ),
-            backgroundColor: widget.colorProfile.buttonColor,
+            backgroundColor: currentProfile.buttonColor,
           );
         }
       );
@@ -224,155 +305,158 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
     }
     
     bool valid;
-    return Stack(
-      children: [
-        Align(
-          alignment: Alignment.bottomRight,
-          child: ConfettiWidget(
-            confettiController: _bottom_right_controller1,
-            blastDirection: (4*pi)/3, // 7 pi /4
-            emissionFrequency: 0.000001,
-            particleDrag: 0.05,
-            numberOfParticles: 25,
-            gravity: globalGravity,
-            minBlastForce: minBlastForce,
-            maxBlastForce: maxBlastForce,
-            shouldLoop: false,
+    return Container(
+      decoration: currentProfile.backBoxDecoration,
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.bottomRight,
+            child: ConfettiWidget(
+              confettiController: _bottom_right_controller1,
+              blastDirection: (4*pi)/3, // 7 pi /4
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 25,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
 
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: ConfettiWidget(
-            confettiController: _bottom_right_controller2,
-            blastDirection: (7*pi)/6, // 7 pi /4
-            emissionFrequency: 0.000001,
-            particleDrag: 0.05,
-            numberOfParticles: 50,
-            gravity: globalGravity,
-            minBlastForce: minBlastForce,
-            maxBlastForce: maxBlastForce,
-            shouldLoop: false,
+          Align(
+            alignment: Alignment.bottomRight,
+            child: ConfettiWidget(
+              confettiController: _bottom_right_controller2,
+              blastDirection: (7*pi)/6, // 7 pi /4
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 50,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
 
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.bottomLeft,
-          child: ConfettiWidget(
-            confettiController: _bottom_left_controller1,
-            blastDirection: (11*pi)/6,
-            emissionFrequency: 0.000001,
-            particleDrag: 0.05,
-            numberOfParticles: 50,
-            gravity: globalGravity,
-            minBlastForce: minBlastForce,
-            maxBlastForce: maxBlastForce,
-            shouldLoop: false,
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: ConfettiWidget(
+              confettiController: _bottom_left_controller1,
+              blastDirection: (11*pi)/6,
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 50,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
 
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.bottomLeft,
-          child: ConfettiWidget(
-            confettiController: _bottom_left_controller2,
-            blastDirection: (5*pi)/3,
-            emissionFrequency: 0.000001,
-            particleDrag: 0.05,
-            numberOfParticles: 25,
-            gravity: globalGravity,
-            minBlastForce: minBlastForce,
-            maxBlastForce: maxBlastForce,
-            shouldLoop: false,
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: ConfettiWidget(
+              confettiController: _bottom_left_controller2,
+              blastDirection: (5*pi)/3,
+              emissionFrequency: 0.000001,
+              particleDrag: 0.05,
+              numberOfParticles: 25,
+              gravity: globalGravity,
+              minBlastForce: minBlastForce,
+              maxBlastForce: maxBlastForce,
+              shouldLoop: false,
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.center,
-          child: Column(
-            children: [
-              Text(
-                widget.titleText,
-                style: TextStyle(
-                  color: widget.colorProfile.textColor, 
-                  fontSize: 30,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  widget.questionLabel,
+          Align(
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                Text(
+                  widget.titleText,
                   style: TextStyle(
-                    color: widget.colorProfile.textColor, 
+                    color: currentProfile.textColor, 
                     fontSize: 30,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    widget.questionLabel,
+                    style: TextStyle(
+                      color: currentProfile.textColor, 
+                      fontSize: 30,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Your phrase",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: currentProfile.textColor
+                        ),
+                      ),
+                      Text(
+                        _transcribedText,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: currentProfile.textColor
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      FloatingActionButton(
+                        onPressed: _listen,
+                        backgroundColor: currentProfile.buttonColor,
+                        child: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      "Your phrase",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: widget.colorProfile.textColor
+                    TextButton(
+                      onPressed: _isListening || _speech.isListening ? stopEngine : () => {
+                        valid = validateAnswer(),
+                        if (valid) {
+                          showDisplay()
+                        } else {
+                          _showCorrectDialog(valid)
+                        }
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
                       ),
+                      child: Text(
+                        'Check Answer',
+                        style: TextStyle(color: currentProfile.contrastTextColor),
+                      )
                     ),
-                    Text(
-                      _transcribedText,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: widget.colorProfile.textColor
+                    TextButton(
+                      onPressed: () => {
+                        clearText()
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    FloatingActionButton(
-                      onPressed: _listen,
-                      backgroundColor: widget.colorProfile.buttonColor,
-                      child: Icon(_isListening ? Icons.mic : Icons.mic_none),
-                    ),
+                      child: Text(
+                        'Clear all answers',
+                        style: TextStyle(color: currentProfile.contrastTextColor),
+                      )
+                    )
                   ],
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: _isListening || _speech.isListening ? stopEngine : () => {
-                      valid = validateAnswer(),
-                      if (valid) {
-                        showDisplay()
-                      } else {
-                        _showCorrectDialog(valid)
-                      }
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(widget.colorProfile.checkAnswerButtonColor),
-                    ),
-                    child: Text(
-                      'Check Answer',
-                      style: TextStyle(color: widget.colorProfile.contrastTextColor),
-                    )
-                  ),
-                  TextButton(
-                    onPressed: () => {
-                      clearText()
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(widget.colorProfile.clearAnswerButtonColor),
-                    ),
-                    child: Text(
-                      'Clear all answers',
-                      style: TextStyle(color: widget.colorProfile.contrastTextColor),
-                    )
-                  )
-                ],
-              )
-            ],
-          ),
-        )
-      ],
+                )
+              ],
+            ),
+          )
+        ],
+      ),
     );
   }
 }

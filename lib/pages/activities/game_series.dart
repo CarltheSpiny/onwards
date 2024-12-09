@@ -1,4 +1,7 @@
 
+// ignore_for_file: unused_field
+
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -8,11 +11,8 @@ import 'package:onwards/pages/activities/playback/playback.dart';
 import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/constants.dart';
-import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-GameDataBank bank = GameDataBank();
 
 class GameTestPage extends StatelessWidget {
   const GameTestPage({
@@ -24,7 +24,7 @@ class GameTestPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bank.initBanks();
+    logger.i("The number of questions for the games are as follows: Playback: ${bank.playbackBank.length}, Reading: ${bank.readingBank.length}, Fill-in-the-Blank: ${bank.fillBlanksBank.length}, Jumble: ${bank.jumbleBank.length}, Typing: ${bank.typingBank.length}");
     return Align(
       alignment: Alignment.center,
       child: SeriesHomePage(
@@ -124,10 +124,10 @@ class SeriesHomePageState extends State<SeriesHomePage> {
     logger.d("This GameTest has a profile of: ${widget.colorProfile.idKey}");
     pages.addAll(List.of([
       FillInActivityScreen(colorProfile: widget.colorProfile),
-      //JumbleActivityScreen(colorProfile: widget.colorProfile),
-      //PlaybackActivityScreen(colorProfile: widget.colorProfile),
-      // ReadingActivityScreen(colorProfile: widget.colorProfile),
-      //TypeActivityScreen(colorProfile: widget.colorProfile,)
+      JumbleActivityScreen(colorProfile: widget.colorProfile),
+      PlaybackActivityScreen(colorProfile: widget.colorProfile),
+      ReadingActivityScreen(colorProfile: widget.colorProfile),
+      TypeActivityScreen(colorProfile: widget.colorProfile,)
     ]));
     return Align(
         alignment: Alignment.center,
@@ -203,9 +203,62 @@ class SeriesEndPageState extends State<SeriesEndPage> {
     super.initState();
   }
 
+  List<Widget> skillLabels = [];
+  List<Widget> getSkillLabels(List<String>? skills) {
+    if (skills != null) {
+      logger.i("Skills: $skills");
+      // <----------- Remove duplicate skills ---------------->
+      Set<String> seen = {};
+      List<String> uniqueSkills = [];
+
+      for (String skill in skills) {
+        if (!seen.contains(skill)) {
+          seen.add(skill);
+          uniqueSkills.add(skill);
+        }
+      }
+      
+      List<String> vals = List.of(skillMap.values);
+      for (String skill in uniqueSkills) {
+        int index = 0;
+        int counter = 0;
+
+        // for each mapped skill in the keys
+        for (String mappedSkill in skillMap.keys) {
+          if (mappedSkill == skill) {
+            index = counter;
+          } else {
+            counter += 1;
+          }
+        }
+        // add the true skill name into the list
+        skillLabels.add(
+          Text(
+            vals[index],
+            style: TextStyle(
+              color: widget.colorProfile.textColor
+            ),
+          )
+        );
+      }
+    }
+    skillLabels.insert(0, 
+      Text(
+        "Tested Skills:", 
+        style: TextStyle(
+          color: widget.colorProfile.textColor,
+          fontSize: 18
+        ),
+      )
+    );
+    return skillLabels;
+  }
+
   @override
   Widget build(BuildContext context) {
     const double sizeFactor = 10;
+
+    
 
     return Scaffold(
       appBar: AppBar(
@@ -241,14 +294,7 @@ class SeriesEndPageState extends State<SeriesEndPage> {
                       return Column(
                         children: [
                           Text(
-                            'Number of Questions: ${widget.seriesCount}',
-                            style: TextStyle(
-                              color: widget.colorProfile.textColor,
-                              fontSize: 15 + sizeFactor,
-                            ),
-                          ),
-                          Text(
-                            'Total Correct: ${snapshot.data}',
+                            'Number of Questions: ${widget.seriesCount}, Total Correct: ${snapshot.data}',
                             style: TextStyle(
                               color: widget.colorProfile.textColor,
                               fontSize: 15 + sizeFactor,
@@ -266,11 +312,8 @@ class SeriesEndPageState extends State<SeriesEndPage> {
                                   if (snapshot.hasError) {
                                     return Text('Error: ${snapshot.error}', style: TextStyle(color: widget.colorProfile.textColor));
                                   } else {
-                                    return Text(
-                                      'Mastered topics for this session: ${snapshot.data ?? "No data"}',
-                                      style: TextStyle(
-                                        color: widget.colorProfile.textColor
-                                      ),
+                                    return Column(
+                                      children: getSkillLabels(snapshot.data),
                                     );
                                   }
                               }

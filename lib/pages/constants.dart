@@ -54,7 +54,7 @@ const ColorProfile plainFlavor = ColorProfile(
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage("/images/space.jpg"), 
-        fit: BoxFit.fitWidth
+        fit: BoxFit.cover
       ),
       color: Colors.white
     ),
@@ -73,7 +73,7 @@ const ColorProfile mintFlavor = ColorProfile(
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage("/images/mint_flavor.png"),
-        fit: BoxFit.fitWidth
+        fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 18, 165, 170),
     ),
@@ -92,7 +92,7 @@ const ColorProfile strawberryFlavor = ColorProfile(
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage("/images/rad_red.jpg"), 
-        fit: BoxFit.fitWidth
+        fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 197, 81, 187),
     ),
@@ -111,7 +111,7 @@ const ColorProfile bananaFlavor = ColorProfile(
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage("/images/yellow.jpg"), 
-        fit: BoxFit.fitWidth
+        fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 255, 251, 0),
     ),
@@ -130,7 +130,7 @@ const ColorProfile peanutFlavor = ColorProfile(
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage("/images/dreamy.jpg"), 
-        fit: BoxFit.fitWidth
+        fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 168, 98, 79),
     ),
