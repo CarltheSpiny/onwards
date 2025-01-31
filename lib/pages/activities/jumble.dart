@@ -200,6 +200,11 @@ class GameFormState extends State<GameForm> {
   Future<void> addMasteredTopic(String topic) async {
     final SharedPreferencesWithCache prefs = await _prefs;
     final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    final List<String> weak = (prefs.getStringList('weak_topics') ?? <String>[]);
+    if (weak.contains(topic)) {
+      weak.remove(topic);
+    }
+
     if (mastered.contains(topic)) {
       logger.i("The skill mastery list already contained: $topic");
       return;
@@ -211,41 +216,74 @@ class GameFormState extends State<GameForm> {
       masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
         return mastered;
       });
+      weakTopicList = prefs.setStringList('weak_topics', weak).then((_) {
+        return weak;
+      });
+    });
+  }
+
+  Future<void> removeMasteredTopic(String topic) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
+    final List<String> weak = (prefs.getStringList('weak_topics') ?? <String>[]);
+    if (mastered.contains(topic)) {
+      mastered.remove(topic);
+
+    }
+    
+    // just add to remove
+    if (weak.contains(topic)) {
+      logger.i("The weak skill list already contained: $topic");
+      return;
+    } else {
+      weak.add(topic);
+    }
+    
+    
+    setState(() {
+      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
+        return mastered;
+      });
+      weakTopicList = prefs.setStringList('weak_topics', weak).then((_) {
+        return weak;
+      });
     });
   }
 
   /// Validate the current selection against the multiple answers
   int validateAnswer() {
-    int errorIndex = 0;
+    int errorIndex = -1;
     bool isCorrect = true;
     if (currentCount >= maxSelection) {
+      // go thru all the answers in the multiAcceptedAnswers
       for (List<String> answerList in widget.answers) {
+        logger.d("Checking a list of answers");
+        // go thru the answer elements in the current list
         for (int i = 0; i < answerList.length; i++) {
+          
+          // If the current answer does not match the one from the list, save the location and mark the flag
           if (_selectedAnswers[i] != answerList[i]) {
             logger.d("Validating Answer: Expected ${answerList[i]}");
             isCorrect = false;
             errorIndex = i;
-          } else {
-            // in the case that there are multiple answers, we need to see if the other ones (besides the first) are correct
-            // instead of failing on the first
-            logger.d("Validating Answer: Another answer matched the current assortment");
-            isCorrect = true;
           }
         }
-        
+
         // when we are done going through one answer, if its correct, just skip checking the rest
         if (isCorrect) {
-          logger.i("Not enough answers are selected, could not validate");
+          logger.i("Skipping checking the rest of the multiAcceptedAnswers as one matched already");
           return -1;
-        } else {
-          return errorIndex;
+
         }
       }
+
     } else {
       logger.d("Not enough answers are selected, could not validate");
       return 0;
     }
-    return 0;
+
+    logger.d("Returning the answer index");
+    return errorIndex;
   }
 
   void clearAnswers() {
@@ -348,13 +386,16 @@ class GameFormState extends State<GameForm> {
       );
     
     } else {
+      for (String skill in widget.skills) {
+            removeMasteredTopic(skill);
+          }
       // Show dialog with location of error
       return showDialog(
         context: context, 
         builder: (context) {
           return AlertDialog(
             content: Text(
-              "Incorrect Answer at ${_selectedAnswers[errorIndex]}",
+              "Incorrect Answer",
               style: TextStyle(
                 color: currentProfile.textColor
               ),

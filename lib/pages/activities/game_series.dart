@@ -204,7 +204,7 @@ class SeriesEndPageState extends State<SeriesEndPage> {
   }
 
   List<Widget> skillLabels = [];
-  List<Widget> getSkillLabels(List<String>? skills) {
+  List<Widget> getSkillLabels(List<String>? skills, String heading) {
     if (skills != null) {
       logger.i("Skills: $skills");
       // <----------- Remove duplicate skills ---------------->
@@ -244,7 +244,7 @@ class SeriesEndPageState extends State<SeriesEndPage> {
     }
     skillLabels.insert(0, 
       Text(
-        "Tested Skills:", 
+        heading, 
         style: TextStyle(
           color: widget.colorProfile.textColor,
           fontSize: 18
@@ -301,6 +301,25 @@ class SeriesEndPageState extends State<SeriesEndPage> {
                             ),
                           ),
                           FutureBuilder<List<String>>(
+                            future: weakTopicList, 
+                            builder: (BuildContext context, AsyncSnapshot<List<String>> weaktopicSnapshot) {
+                              switch (weaktopicSnapshot.connectionState) {
+                                case ConnectionState.none:
+                                case ConnectionState.waiting:
+                                  return const CircularProgressIndicator();
+                                case ConnectionState.active:
+                                case ConnectionState.done:
+                                  if (weaktopicSnapshot.hasError) {
+                                    return Text('Error: ${weaktopicSnapshot.error}', style: TextStyle(color: widget.colorProfile.textColor));
+                                  } else {
+                                    return Column(
+                                      children: getSkillLabels(weaktopicSnapshot.data, "Skills that need practice"),
+                                    );
+                                  }
+                              }
+                            }
+                          ),
+                          FutureBuilder<List<String>>(
                             future: masteredTopicList, 
                             builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
                               switch (snapshot.connectionState) {
@@ -313,7 +332,7 @@ class SeriesEndPageState extends State<SeriesEndPage> {
                                     return Text('Error: ${snapshot.error}', style: TextStyle(color: widget.colorProfile.textColor));
                                   } else {
                                     return Column(
-                                      children: getSkillLabels(snapshot.data),
+                                      children: getSkillLabels(snapshot.data, "Mastered Skills"),
                                     );
                                   }
                               }
