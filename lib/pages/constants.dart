@@ -53,12 +53,12 @@ const ColorProfile plainFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/space.jpg"), 
+        image: AssetImage("/images/space.png"), 
         fit: BoxFit.cover
       ),
       color: Colors.white
     ),
-    backgroundImage: AssetImage("/images/space.jpg"),
+    backgroundImage: AssetImage("/images/space.png"),
     idKey: "plain flavor"
   );
 
@@ -91,12 +91,12 @@ const ColorProfile strawberryFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/rad_red.jpg"), 
+        image: AssetImage("/images/rad_red.png"), 
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 197, 81, 187),
     ),
-    backgroundImage: AssetImage("/images/rad_red.jpg"),
+    backgroundImage: AssetImage("/images/rad_red.png"),
     idKey: "strawberry flavor"
   );
 
@@ -110,12 +110,12 @@ const ColorProfile bananaFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/yellow.jpg"), 
+        image: AssetImage("/images/yellow.png"), 
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 255, 251, 0),
     ),
-    backgroundImage: AssetImage("/images/yellow.jpg"),
+    backgroundImage: AssetImage("/images/yellow.png"),
     idKey: "banana flavor"
   );
 
@@ -129,12 +129,12 @@ const ColorProfile peanutFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/dreamy.jpg"), 
+        image: AssetImage("/images/dreamy.png"), 
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 168, 98, 79),
     ),
-    backgroundImage: AssetImage("/images/dreamy.jpg"),
+    backgroundImage: AssetImage("/images/dreamy.png"),
     idKey: "peanut flavor"
   );
 

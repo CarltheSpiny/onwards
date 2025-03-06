@@ -2,10 +2,12 @@ import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/calculator.dart';
+import 'package:onwards/pages/components/calculator.dart';
+import 'package:onwards/pages/components/progress_bar.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The screen for the 'Fill in the Blank' game.
@@ -14,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FillInActivityScreen extends StatelessWidget {
   const FillInActivityScreen({
     super.key,
-    this.colorProfile = plainFlavor
+    this.colorProfile = plainFlavor,
   });
 
   final ColorProfile colorProfile;
@@ -26,19 +28,22 @@ class FillInActivityScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fill in the Blank Game'),
+        title: Text('Fill in the Blank Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [CalcButton()],
+        actions: const [ProgressBar(), ScoreDisplayAction(), CalcButton()]
       ),
-      body: GameForm(
-        answers: fillBlanksGameData.multiAcceptedAnswers, 
-        questionLabel: fillBlanksGameData.displayedProblem,  
-        blankQuestLabel: fillBlanksGameData.blankForm,
-        maxSelectedAnswers: fillBlanksGameData.getMinSelection(),
-        buttonOptions: fillBlanksGameData.optionList,
-        colorProfile: colorProfile,
-        skills: fillBlanksGameData.skills,
-      ),
+      body:Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child:  GameForm(
+          answers: fillBlanksGameData.multiAcceptedAnswers, 
+          questionLabel: fillBlanksGameData.displayedProblem,  
+          blankQuestLabel: fillBlanksGameData.blankForm,
+          maxSelectedAnswers: fillBlanksGameData.getMinSelection(),
+          buttonOptions: fillBlanksGameData.optionList,
+          colorProfile: colorProfile,
+          skills: fillBlanksGameData.skills,
+        ),
+      )
     );
   }
 }

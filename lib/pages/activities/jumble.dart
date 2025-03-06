@@ -1,11 +1,15 @@
 
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:onwards/pages/calculator.dart';
+import 'package:onwards/pages/components/calculator.dart';
+import 'package:onwards/pages/components/progress_bar.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
@@ -13,7 +17,7 @@ import '../constants.dart';
 class JumbleActivityScreen extends StatelessWidget {
   const JumbleActivityScreen({
     super.key,
-    this.colorProfile = lightFlavor
+    this.colorProfile = lightFlavor,
   });
   
   final ColorProfile colorProfile;
@@ -23,24 +27,22 @@ class JumbleActivityScreen extends StatelessWidget {
 
     JumbleGameData jumbleGameData = bank.getRandomJumbleElement();
 
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Word Jumble Game'),
+        title: Text('Word Jumble Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [CalcButton()],
+        actions: const [ScoreDisplayAction(), CalcButton()]
       ),
-      body: Center(
-        child: GameForm(
-          answers: jumbleGameData.multiAcceptedAnswers, 
-          questionLabel: jumbleGameData.displayedProblem, 
-          maxSelectedAnswers: jumbleGameData.getMinSelection(), 
-          buttonOptions: jumbleGameData.optionList,
-          titleQuestion: jumbleGameData.writtenPrompt,
-          showArithmitic: true,
-          colorProfile: colorProfile,
-          skills: jumbleGameData.skills,
-        ),
+      body: GameForm(
+        answers: jumbleGameData.multiAcceptedAnswers, 
+        questionLabel: jumbleGameData.displayedProblem, 
+        maxSelectedAnswers: jumbleGameData.getMinSelection(), 
+        buttonOptions: jumbleGameData.optionList,
+        titleQuestion: jumbleGameData.writtenPrompt,
+        showArithmitic: true,
+        colorProfile: colorProfile,
+        skills: jumbleGameData.skills,
+        scoreValue: jumbleGameData.score,
       ),
     );
   }
@@ -60,7 +62,8 @@ class GameForm extends StatefulWidget {
     required this.titleQuestion,
     required this.showArithmitic,
     required this.colorProfile,
-    required this.skills
+    required this.skills,
+    required this.scoreValue
   });
 
   final ColorProfile colorProfile; 
@@ -75,6 +78,7 @@ class GameForm extends StatefulWidget {
   final String titleQuestion;
   final bool showArithmitic;
   final List<String> skills;
+  final int scoreValue;
 
   @override
   GameFormState createState() => GameFormState();
@@ -84,15 +88,18 @@ class GameFormState extends State<GameForm> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics'}
+        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics', 'score'}
       ));
+  // Cached metrics
   late Future<int> correctCounter;
   late Future<int> missedCounter;
+  late Future<int> scoreCounter;
   late Future<List<String>> masteredTopicList;
   late Future<List<String>> weakTopicList;
   late Future<int> themeId;
   OverlayEntry? entry;
   ColorProfile? cachedTheme;
+
   // confetti animation
   late ConfettiController _bottom_right_controller1;
   late ConfettiController _bottom_right_controller2;
@@ -123,6 +130,9 @@ class GameFormState extends State<GameForm> {
     themeId = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('theme_id') ?? 0;
     });
+    scoreCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('score') ?? 0;
+    });
     masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getStringList('mastered_topics') ?? <String>[];
     });
@@ -151,10 +161,16 @@ class GameFormState extends State<GameForm> {
   Future<void> _incrementCounter() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     final int counter = (prefs.getInt('correct') ?? 0) + 1;
+    final int score = (prefs.getInt('score') ?? 0) + widget.scoreValue;
+
     setState(() {
       correctCounter = prefs.setInt('correct', counter).then((_) {
         logger.i('Updating correct count...');
         return counter;
+      });
+      scoreCounter = prefs.setInt('score', score).then((_) {
+        logger.d('Updating score...');
+        return score;
       });
     });
   }
@@ -257,13 +273,13 @@ class GameFormState extends State<GameForm> {
     if (currentCount >= maxSelection) {
       // go thru all the answers in the multiAcceptedAnswers
       for (List<String> answerList in widget.answers) {
-        logger.d("Checking a list of answers");
+        logger.d("Checking a list of answers: ${widget.answers.length}");
         // go thru the answer elements in the current list
         for (int i = 0; i < answerList.length; i++) {
           
           // If the current answer does not match the one from the list, save the location and mark the flag
           if (_selectedAnswers[i] != answerList[i]) {
-            logger.d("Validating Answer: Expected ${answerList[i]}");
+            logger.d("Validating Answer: Expected ${answerList[i]} at Position: $i");
             isCorrect = false;
             errorIndex = i;
           }
@@ -273,7 +289,8 @@ class GameFormState extends State<GameForm> {
         if (isCorrect) {
           logger.i("Skipping checking the rest of the multiAcceptedAnswers as one matched already");
           return -1;
-
+        } else {
+          logger.d("Match hasn't been found yet, continuing...");
         }
       }
 
@@ -558,88 +575,95 @@ class GameFormState extends State<GameForm> {
           ),
           Align(
             alignment: Alignment.center,
-            child: Column(
-              children: [
-                Text(
-                  widget.titleQuestion,
-                  style: TextStyle(
-                      color: currentProfile.textColor, 
-                      fontSize: 30,
-                    ),
-                    textAlign: TextAlign.center,
-                ),
-                // Render the question label
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: widget.showArithmitic ? Text(
-                    widget.questionLabel,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Column(
+                children: [
+                  Text(
+                    widget.titleQuestion,
                     style: TextStyle(
-                      color: currentProfile.textColor, 
-                      fontSize: 30,
-                      
-                    ),
-                  ) : null,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column( 
-                    // attempt to render the selected answers as they are moved into the list
+                        color: currentProfile.textColor, 
+                        fontSize: 30,
+                      ),
+                      textAlign: TextAlign.center,
+                  ),
+                  // Render the question label
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: widget.showArithmitic ? Text(
+                      widget.questionLabel,
+                      style: TextStyle(
+                        color: currentProfile.textColor, 
+                        fontSize: 30,
+                        
+                      ),
+                    ) : null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column( 
+                      // attempt to render the selected answers as they are moved into the list
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: renderConditionalLabels(),
+                        ),
+                      ],
+                    )
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: dynamicButtonList,
+                      ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: renderConditionalLabels(),
+                      TextButton(
+                        onPressed: _selectedAnswers.isEmpty ? null : () => {
+                          if (validateAnswer() < 0) {
+                            showDisplay()
+                          } else {
+                            _showCorrectDialog(validateAnswer())
+                          }
+                        }, 
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
+                        ),
+                        child: Text(
+                          'Check Answer',
+                            style: TextStyle(
+                              color: currentProfile.contrastTextColor
+                            ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => {
+                          clearAnswers()
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
+                        ),
+                        child: Text(
+                          'Clear all answers',
+                          style: TextStyle(
+                            color: currentProfile.contrastTextColor),
+                        )
                       ),
                     ],
-                  )
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: dynamicButtonList,
-                    ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: _selectedAnswers.isEmpty ? null : () => {
-                        if (validateAnswer() < 0) {
-                          showDisplay()
-                        } else {
-                          _showCorrectDialog(validateAnswer())
-                        }
-                      }, 
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
-                      ),
-                      child: Text(
-                        'Check Answer',
-                          style: TextStyle(
-                            color: currentProfile.contrastTextColor
-                          ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => {
-                        clearAnswers()
-                      },
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
-                      ),
-                      child: Text(
-                        'Clear all answers',
-                        style: TextStyle(
-                          color: currentProfile.contrastTextColor),
-                      )
-                    ),
-                  ],
-                )
-              ],
-            ),
+                  ),
+                ],
+              ),
+            )
           ),
+          const Align(
+                    alignment: Alignment.bottomCenter,
+                    child: ProgressBar(),
+                  )
         ],
       )
     );

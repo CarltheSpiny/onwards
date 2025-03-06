@@ -4,14 +4,17 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/fill_in_the_blank.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/activities/playback/playback.dart';
 import 'package:onwards/pages/activities/reading/reading.dart';
 import 'package:onwards/pages/activities/typing.dart';
+import 'package:onwards/pages/components/progress_bar.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GameTestPage extends StatelessWidget {
@@ -28,7 +31,7 @@ class GameTestPage extends StatelessWidget {
     return Align(
       alignment: Alignment.center,
       child: SeriesHomePage(
-        maxQuestCount: 5,
+        maxQuestCount: 10,
         colorProfile: colorProfile,
       ),
     );
@@ -54,11 +57,15 @@ class SeriesHomePageState extends State<SeriesHomePage> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct'}
+        allowList: <String>{'correct', 'progress'}
       ));
   late Future<int> _correctCounter;
+  late Future<double> progress;
   List<Widget> pages = [];
   List<int> selectedPageOrder = [];
+  int questionCount = 0;
+  int currentProgress = 0;
+  double progressForBar = 0.0;
 
   Future<void> _resetCorrectCount() async {
     final SharedPreferencesWithCache prefs = await _prefs;
@@ -74,11 +81,41 @@ class SeriesHomePageState extends State<SeriesHomePage> {
       });
     });
   }
+
+  Future<void> resetProgressCount() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    if ((prefs.getDouble('progress') ?? 0) <= 0) {
+      return;
+    }
+
+    const double progressCache = 0;
+    setState(() {
+      progress = prefs.setDouble('progress', progressCache).then((_) {
+        logger.i("reset counter for this session");
+        return progressCache;
+      });
+    });
+  }
+
+  Future<void> increaseProgress(double nextProgress) async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    final double progressCache = clampDouble(nextProgress, 0, 1);
+
+    setState(() {
+      progress = prefs.setDouble('progress', progressCache).then((_) {
+        logger.d('Updating progress for bar...');
+        return progressCache;
+      });
+    });
+  }
   
   @override
   void initState() {
     _correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
+    });
+    progress = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getDouble('progress') ?? 0.0;
     });
     super.initState();
   }
@@ -87,6 +124,7 @@ class SeriesHomePageState extends State<SeriesHomePage> {
     final random = Random();
     int randStartIndex = random.nextInt(pages.length);
     selectedPageOrder.clear();
+    questionCount = pages.length;
 
     for (int i =0; i < widget.maxQuestCount; i++) {
       int next = (randStartIndex + i) % pages.length;
@@ -97,8 +135,13 @@ class SeriesHomePageState extends State<SeriesHomePage> {
   }
 
   void navigateToNext(int currentIndex) {
-    logger.d("Profile for the next page is: ${widget.colorProfile.idKey}");
     if (currentIndex < selectedPageOrder.length) {
+      increaseProgress(progressForBar);
+      currentProgress++;
+      progressForBar = (currentProgress / selectedPageOrder.length);
+      logger.d("Profile for the next page is: ${widget.colorProfile.idKey}, Question Number: $currentProgress, Progress: $progressForBar");
+      
+
       Navigator.push(
         context, 
         MaterialPageRoute(
@@ -110,12 +153,13 @@ class SeriesHomePageState extends State<SeriesHomePage> {
       });
     } else {
       logger.d("Reached the end of the navigation, showing end results");
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => SeriesEndPage(
-            colorProfile: widget.colorProfile, 
-            seriesCount: selectedPageOrder.length,
-          ))
-        );
+      increaseProgress(1.0);
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => SeriesEndPage(
+          colorProfile: widget.colorProfile, 
+          seriesCount: selectedPageOrder.length,
+        ))
+      );
     }
   }
 
@@ -127,7 +171,7 @@ class SeriesHomePageState extends State<SeriesHomePage> {
       JumbleActivityScreen(colorProfile: widget.colorProfile),
       PlaybackActivityScreen(colorProfile: widget.colorProfile),
       ReadingActivityScreen(colorProfile: widget.colorProfile),
-      TypeActivityScreen(colorProfile: widget.colorProfile,)
+      TypeActivityScreen(colorProfile: widget.colorProfile)
     ]));
     return Align(
         alignment: Alignment.center,
@@ -177,12 +221,13 @@ class SeriesEndPageState extends State<SeriesEndPage> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct', 'missed', 'mastered_topics', 'weak_topics'}
+        allowList: <String>{'correct', 'missed', 'mastered_topics', 'weak_topics', 'score'}
       ));
   late Future<int> correctCounter;
   late Future<int> missedCounter;
   late Future<List<String>> masteredTopicList;
   late Future<List<String>> weakTopicList;
+  late Future<int> score;
 
   // handle the end of the series game
   @override
@@ -199,6 +244,9 @@ class SeriesEndPageState extends State<SeriesEndPage> {
     });
     weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getStringList('weak_topics') ?? <String>[];
+    });
+    score = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('score') ?? 0;
     });
     super.initState();
   }
@@ -262,9 +310,9 @@ class SeriesEndPageState extends State<SeriesEndPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Results"),
+        title: Text("Results", style: TextStyle(color: widget.colorProfile.textColor),),
         backgroundColor: widget.colorProfile.headerColor,
-        centerTitle: true,
+        actions: const [ProgressBar(), ScoreDisplayAction()],
       ),
       body: Container(
         decoration: widget.colorProfile.backBoxDecoration,

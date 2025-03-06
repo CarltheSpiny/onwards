@@ -6,17 +6,19 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/jumble.dart';
-import 'package:onwards/pages/calculator.dart';
+import 'package:onwards/pages/components/calculator.dart';
+import 'package:onwards/pages/components/progress_bar.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
+import 'package:onwards/pages/score_display.dart';
 import 'package:onwards/pages/tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PlaybackActivityScreen extends StatelessWidget {
   const PlaybackActivityScreen(
     {super.key,
-    this.colorProfile = lightFlavor
+    this.colorProfile = lightFlavor,
   });
 
   final ColorProfile colorProfile;
@@ -27,24 +29,23 @@ class PlaybackActivityScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Playback and Answer Game'),
+        title: Text('Playback and Answer Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [CalcButton()],
+        actions: const [ProgressBar(), ScoreDisplayAction(), CalcButton()]
       ),
       body: Container(
         decoration: colorProfile.backBoxDecoration,
-        child: 
-          PlaybackGameForm(
-            audioSource: AssetSource(playbackData.webAudioLink),
-            answers: playbackData.multiAcceptedAnswers, 
-            questionLabel: playbackData.audioTranscript, 
-            maxSelectedAnswers: playbackData.getMinSelection(), 
-            buttonOptions: playbackData.optionList,
-            titleQuestion: playbackData.writtenPrompt,
-            showArithmitic: true,
-            colorProfile: colorProfile,
-            skills: playbackData.skills,
-          ),
+        child: PlaybackGameForm(
+          audioSource: AssetSource(playbackData.webAudioLink),
+          answers: playbackData.multiAcceptedAnswers, 
+          questionLabel: playbackData.audioTranscript, 
+          maxSelectedAnswers: playbackData.getMinSelection(), 
+          buttonOptions: playbackData.optionList,
+          titleQuestion: playbackData.writtenPrompt,
+          showArithmitic: true,
+          colorProfile: colorProfile,
+          skills: playbackData.skills,
+        ),
       )
     );
   }
@@ -489,79 +490,82 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
           ),
           Align(
             alignment: Alignment.center,
-            child: Column(
-              children: [
-                Text(
-                  widget.titleQuestion,
-                  style: TextStyle(
-                      color: currentProfile.textColor, 
-                      fontSize: 30,
-                    ),
-                    textAlign: TextAlign.center,
-                ),
-               
-                TTSRunner(voiceLine: widget.questionLabel),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column( 
-                    // attempt to render the selected answers as they are moved into the list
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: renderConditionalLabels(),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Column(
+                children: [
+                  Text(
+                    widget.titleQuestion,
+                    style: TextStyle(
+                        color: currentProfile.textColor, 
+                        fontSize: 30,
                       ),
+                      textAlign: TextAlign.center,
+                  ),
+                
+                  TTSRunner(voiceLine: widget.questionLabel),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column( 
+                      // attempt to render the selected answers as they are moved into the list
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: renderConditionalLabels(),
+                        ),
+                      ],
+                    )
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: dynamicButtonList,
+                      ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: _selectedAnswers.isEmpty ? null : () => {
+                          valid = validateAnswer(),
+                          if (valid < 0) {
+                            showDisplay()
+                          } else {
+                            _showCorrectDialog(valid)
+                          }
+                        }, 
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
+                        ),
+                        child: Text(
+                          'Check Answer',
+                            style: TextStyle(
+                              color: currentProfile.contrastTextColor
+                            ),
+                        ),
+                        
+                      ),
+                      TextButton(
+                        onPressed: () => {
+                          clearAnswers()
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
+                        ),
+                        child: Text(
+                          'Clear all answers',
+                          style: TextStyle(
+                            color: currentProfile.contrastTextColor),
+                          )
+                        )
                     ],
                   )
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: dynamicButtonList,
-                    ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: _selectedAnswers.isEmpty ? null : () => {
-                        valid = validateAnswer(),
-                        if (valid < 0) {
-                          showDisplay()
-                        } else {
-                          _showCorrectDialog(valid)
-                        }
-                      }, 
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(currentProfile.checkAnswerButtonColor),
-                      ),
-                      child: Text(
-                        'Check Answer',
-                          style: TextStyle(
-                            color: currentProfile.contrastTextColor
-                          ),
-                      ),
-                      
-                    ),
-                    TextButton(
-                      onPressed: () => {
-                        clearAnswers()
-                      },
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(currentProfile.clearAnswerButtonColor),
-                      ),
-                      child: Text(
-                        'Clear all answers',
-                        style: TextStyle(
-                          color: currentProfile.contrastTextColor),
-                        )
-                      )
-                  ],
-                )
-              ],
-            ),
+                ],
+              ),  
+            )
           )
         ],
       ),

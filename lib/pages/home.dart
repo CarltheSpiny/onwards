@@ -11,6 +11,7 @@ import 'package:onwards/pages/activities/fill_in_the_blank.dart';
 import 'package:onwards/pages/activities/playback/playback.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
+import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const ImageProvider placeholderImage = AssetImage('assets/images/placeholder.png');
@@ -92,7 +93,7 @@ class HomePageState extends State<HomePage> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'theme_id', 'correct', 'missed', 'mastered_topics', 'weak_topics'}
+        allowList: <String>{'theme_id', 'correct', 'missed', 'mastered_topics', 'weak_topics', 'score'}
       )
     );
 
@@ -101,6 +102,7 @@ class HomePageState extends State<HomePage> {
   late Future<int> missedCounter;
   late Future<List<String>> masteredTopicList;
   late Future<List<String>> weakTopicList;
+  late Future<int> score;
 
   final maxThemes = 6;
 
@@ -211,6 +213,9 @@ class HomePageState extends State<HomePage> {
     missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('missed') ?? 0;
     });
+    score = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('score') ?? 0;
+    });
 
     masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getStringList('mastered_topics') ?? <String>[];
@@ -241,7 +246,7 @@ class HomePageState extends State<HomePage> {
           'assets/images/fill-in-the-blank-preview.png'
         ),
         gameRoute: '/fill-in-the-blank',
-        gameWidget: FillInActivityScreen(colorProfile: currentProfile,), 
+        gameWidget: FillInActivityScreen(colorProfile: currentProfile), 
         keyId: 1,
         title: "Fill in the Blank",
         subtitle: "Difficulty: Easy",
@@ -291,6 +296,7 @@ class HomePageState extends State<HomePage> {
         title: const Text('Home'),
         backgroundColor: currentProfile.headerColor,
         centerTitle: true,
+        actions: const [ScoreDisplayAction()],
         
       ),
       body: Container(
