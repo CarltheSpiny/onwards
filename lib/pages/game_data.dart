@@ -5,15 +5,15 @@ import 'package:onwards/pages/home.dart';
 /// Fill in the blank needs the question to show with blanks, 
 /// the arithmitic form, and the answer blocks
 class GameData {
-  GameData({
+  const GameData({
     required this.id,
     required this.skills,
     required this.score
   });
 
-  int score;
-  String id;
-  List<String> skills;
+  final int score;
+  final String id;
+  final List<String> skills;
 }
 
 // Unique ID for each question; Should be meaningful
@@ -32,7 +32,7 @@ class PlaybackGameData extends GameData {
   final String webAudioLink;
   final List<List<String>> multiAcceptedAnswers;
   final String writtenPrompt;
-  String audioTranscript;
+  final String audioTranscript;
   final List<String> optionList;
 
   int getMinSelection() {
@@ -90,7 +90,7 @@ class ReadAloudGameData extends GameData {
 }
 
 class TypingGameData extends GameData {
-  TypingGameData({
+  const TypingGameData({
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
     this.writtenPrompt = "Write the expression in written form (do not use special characters)",
@@ -138,25 +138,24 @@ class GameDataBank {
   List<TypingGameData> typingBank = [];
   List<FillBlanksGameData> fillBlanksBank = [];
 
+  // Level select banks
+  List<GameData> easyModeBank = [];
+  List<GameData> intermediateModeBank = [];
+  List<GameData> hardModeBank = [];
+
   GameDataBank();
 
   void initBanks() {
     // check if the banks already have data
-    if (jumbleBank.isNotEmpty) {
-      jumbleBank.clear();
-    }
-    if (playbackBank.isNotEmpty) {
-      playbackBank.clear();
-    }
-    if (readingBank.isNotEmpty) {
-      jumbleBank.clear();
-    }
-    if (typingBank.isNotEmpty) {
-      typingBank.clear();
-    }
-    if (fillBlanksBank.isNotEmpty) {
-      fillBlanksBank.clear();
-    }
+    jumbleBank.clear();
+    playbackBank.clear();
+    jumbleBank.clear();
+    typingBank.clear();
+    fillBlanksBank.clear();
+
+    easyModeBank.clear();
+    intermediateModeBank.clear();
+    hardModeBank.clear();
 
     initJumbleBank();
     initPlaybackBank();
@@ -164,6 +163,8 @@ class GameDataBank {
     initTypingBank();
     initFillBlanksBank();
     logger.i("Iniitalized the game questions from the disk");
+
+    // shuffle bank; Note: Getter for these types are randomized too
     fillBlanksBank.shuffle(random);
     jumbleBank.shuffle(random);
     playbackBank.shuffle(random);
@@ -735,6 +736,426 @@ class GameDataBank {
     );
   }
 
+  void initEasyModeBank() {
+    easyModeBank.addAll(
+      [
+        JumbleGameData(
+          displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
+          multiAcceptedAnswers: [
+            ["She", "is", "forty", "years-old"]
+          ],
+          writtenPrompt: 'Answer the short-response question using the blocks below.',
+          optionList: [
+            "She", "eight", "five", "forty", "thrity-two", "is", "forty-eight", "years-old"
+          ],
+          id: "jumble.1",
+          skills: ["single_digit_addition", "word_problem_written_form"],
+        ),
+        JumbleGameData(
+          displayedProblem: 'Franklin has a set of building blocks with 176 pieces. He received 2 more sets as gifts. One has 95 pieces; the other has 160 pieces. How many building blocks does Franklin have all together?', 
+          multiAcceptedAnswers: [
+            ["Franklin", "has", "four hundred and thirty one", "blocks"]
+          ],
+          writtenPrompt: 'Answer the short-response question using the blocks below.',
+          optionList: [
+            "blocks", "four hundred thirty one", "Franklin", "fourty-three and one", "has", "four thirty one", 
+          ],
+          id: "jumble.2",
+          skills: ["word_problem_written_form", "three_place_addition"]
+        ),
+        
+        JumbleGameData(
+          displayedProblem: '4153 + 3567 = 7720', 
+          multiAcceptedAnswers: [
+            ['four thousand one hundred and fifty three', "plus", 'three thousand five hundred and sixty seven', 'equals', 'seven thousand seven hundred and twenty'], 
+            ['four thousand one hundred and fifty three', "plus", 'three thousand five hundred and sixty seven', 'is', 'seven thousand seven hundred and twenty']
+          ],
+          optionList: ['four thousand one hundred and fifty three', "minus", 'fourty one hundred and fifty three', 'thirty five hundred and sixty seven',
+          'three thousand five hundred and sixty seven', 'plus', 'seventy seven hundred and twenty', 'seven thousand seven hundred and twenty', 'equals'],
+          id: "jumble.4",
+          skills: ["written_four_place_number_values"]
+        ),
+        PlaybackGameData(
+          webAudioLink: '', 
+          multiAcceptedAnswers: [
+            ["six"]
+          ],
+          optionList: [
+            "seven", "eight", "five", "three", "six", "one", "eight", "nine"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below. Only submit the number.", 
+          audioTranscript: 'Five times what number results in thrity?',
+          skills: ["single_digit_addition", "spoken_written_form"],
+          id: "playback.1"
+        ),
+        PlaybackGameData(
+          webAudioLink: '', 
+          multiAcceptedAnswers: [
+            ["eight"]
+          ],
+          optionList: [
+            "ten", "eight", "five", "three", "six", "one", "eight", "nine"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below.", 
+          audioTranscript: 'Jack has 40 trading cards that he would like to give to his 5 friends. If he shares them equally, how many cards will he give to each?',
+          skills: ["spoken_written_form", "single_digit_division"],
+          id: "playback.2"
+        ),
+        TypingGameData(
+          displayedProblem: '4153 + 3567 = 7720', 
+          multiAcceptedAnswers: ["four thousand one hundred and fifty three plus three thousand five hundred and sixty seven equals seven thousand seven hundred and twenty",
+          "four thousand one hundred and fifty three plus three thousand five hundred and sixty seven is seven thousand seven hundred and twenty"],
+          skills: ["four_or_more_place_addition", "written_form"],
+          id: "typing.1"
+        ),
+        TypingGameData(
+          displayedProblem: 'Patrick has filled 1,485 of 3,000 baseball cards. How many cards are left to be filled?', 
+          multiAcceptedAnswers: ["one thousand five hundred and fifteen", "one thousand five hundred fifteen"],
+          writtenPrompt: "Type the remaining card amount in standard written form.",
+          skills: ["four_or_more_place_addition", "written_form"],
+          id: "typing.2"
+        ),
+        FillBlanksGameData(
+          displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
+          multiAcceptedAnswers: ["forty"], 
+          writtenPrompt: 'Use the options below to answer the word problem.', 
+          blankForm: "Sally's mother is  ____ years old", 
+          optionList: [
+            "eight", "five", "forty", "thrity-two", "forty-eight"
+          ],
+          skills: ["single_digit_addition", "written_form"],
+          id: "fill.1"
+        ),
+        FillBlanksGameData(
+          displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. How many times did they hit the target?', 
+          multiAcceptedAnswers: ["seven hundred and seventy nine"], 
+          writtenPrompt: 'Use the options below to answer the word problem.', 
+          blankForm: "The teams hit the target ____ times", 
+          optionList: [
+            "eight hundred", "twenty one", "seven hundred and seventy nine", "four hundred and tweleve", "three hundred and sixty seven"
+          ],
+          skills: ["three_place_addition", "written_form"],
+          id: "fill.2"
+        ),
+        FillBlanksGameData(
+          displayedProblem: 'Murphy has an article with 72,885 words and an article with 59,993 words. How many more words does the longer article have?', 
+          multiAcceptedAnswers: ["tweleve thousand eight hundred and ninety two"], 
+          writtenPrompt: 'Use the options below to answer the word problem.', 
+          blankForm: "The longer article has ____ more words than the shorter one.", 
+          optionList: [
+            "seventy two thousand eight hundred and eighty five", "tweleve thousand eight hundred and ninety two", "fifty nine thousand nine hundred and ninrty three", "one hundred two thousand eight hundred and ninety two", "five hundred thousand nine thousand nine hundred and ninety three"
+          ],
+          skills: ["four_or_more_place_addition", "written_form"],
+          id: "fill.3"
+        ),
+        JumbleGameData(
+          displayedProblem: '158 + 217 + 325 = 700', 
+          multiAcceptedAnswers: [
+            ['one hundred and fifty eight', "plus", 'two hundred and seventeen', 'plus ', 'three hundred and twenty five', 'equals', 'seven hundred'],
+            ['one hundred and fifty eight', "plus ", 'two hundred and seventeen', 'plus', 'three hundred and twenty five', 'equals', 'seven hundred']
+          ],
+          optionList: ['one hundred and fifty eight', "plus ", 'twenty one and seven', 'thirty five hundred and sixty seven',
+          'three hundred and twenty five', 'plus', 'seven hundred', 'two hundred and seventeen', 'equals'],
+          id: "jumble.6",
+          skills: ["written_three_place_number_values, multiple_operations"]
+        ),
+        JumbleGameData(
+          displayedProblem: '176 + 95 + 160 = 431', 
+          multiAcceptedAnswers: [
+            ['one hundred and seventy six', "plus", 'ninety five', 'plus ', 'one hundred and sixty', 'equals', 'four hundred and thirty one'],
+            ['one hundred and seventy six', "plus ", 'ninety five', 'plus', 'one hundred and sixty', 'equals', 'four hundred and thirty one']
+          ],
+          optionList: ['ninety five', "plus ", 'four hundred and thirty one', 'seventeen and six',
+          'one hundred and seventy six', 'plus', 'four thrity one', 'one hundred and sixty', 'equals'],
+          id: "jumble.7",
+          skills: ["written_two_place_number_values, multiple_operations"]
+        ),
+      ]
+    );
+  }
+
+  void initIntermediateModeBank() {
+    intermediateModeBank.addAll(
+      [
+        JumbleGameData(
+          displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. Did the two teams hit the target 800 times? If not, by how much did they miss?', 
+          multiAcceptedAnswers: [
+            ["They", "missed", "twenty-one", "times"]
+          ],
+          writtenPrompt: 'Answer the short-response question using the blocks below.',
+          optionList: [
+            "seven hundred and seventy nine", "They", "twenty-one", "missed", "seven hundred seventy", "times"
+          ],
+          id: "jumble.3",
+          skills: ["word_problem_written_form", "multiple_operations", "three_place_subtraction"]
+        ),
+        JumbleGameData(
+          displayedProblem: '375 + 109 = 484', 
+          multiAcceptedAnswers: [
+            ['three hundred seventy five', "plus", 'one hundred and nine', 'equals', 'four hundred eighty four']
+          ],
+          optionList: ['three hundred seventy five', "minus", 'one o nine', 'three seven five',
+          'one hundred and nine', 'plus', 'thirty seven and five', 'four hundred eighty four', 'equals'],
+          id: "jumble.5",
+          skills: ["written_three_place_number_values"]
+        ),
+        PlaybackGameData(
+          webAudioLink: '', 
+          multiAcceptedAnswers: [
+            ["one"]
+          ],
+          optionList: [
+            "ten", "eight", "five", "three", "six", "one", "eight", "nine", "two"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below.", 
+          audioTranscript: "Lome's cat had 6 kittens that he gave equally to his 6 friends. How many kittens did each friend get?",
+          skills: ["spoken_written_form", "single_digit_division"],
+          id: "playback.3"
+        ),
+        PlaybackGameData(
+          webAudioLink: '', 
+          multiAcceptedAnswers: [
+            ["eight"]
+          ],
+          optionList: [
+            "ten", "eight", "five", "three", "six", "one", "eight", "nine", "two"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below.", 
+          audioTranscript: 'Raffle tickets sell for \$1 each. How many tickets can Thorn buy for \$8?',
+          skills: ["spoken_written_form", "money", "single_digit_division"],
+          id: "playback.4"
+        ),
+        PlaybackGameData(
+          webAudioLink: '', 
+          multiAcceptedAnswers: [
+            ["two"]
+          ],
+          optionList: [
+            "ten", "eight", "five", "three", "six", "one", "eight", "nine", "two"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below.", 
+          audioTranscript: 'Emily has \$12 and wants to buy some books. The books are \$6 each. How many books can Emily buy?',
+          skills: ["spoken_written_form", "money", "single_digit_division"],
+          id: "playback.5"
+        ),
+        ReadAloudGameData(
+          displayedProblem: "14 x 34 = ??", 
+          writtenPrompt: "What is the product of the following expression?",
+          addtionalInstructions: "Only say the product, do not repeat the expression.",
+          multiAcceptedAnswers: [["four hundred seventy six"], ["476"]],
+          skills: ["two_place_multiplication", "self-spoken_written_form"],
+          id: "reading.1"
+        ),
+        ReadAloudGameData(
+          displayedProblem: "When a number is multiplied by 8, the product is 64,000. What is that number?", 
+          addtionalInstructions: "Only say the product, do not repeat the expression.",
+          multiAcceptedAnswers: [["eight thousand"], ["8000"]],
+          skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
+          id: "reading.2"
+        ),
+        TypingGameData(
+          displayedProblem: 'Elizabeth and Jeanne are covering a fireplace mantel with 4500 fancy tacks. Elisabeth has added 934 tacks to the mantel. Jeanne has added 1,093 tacks. How many tacks do they have to add to complete the mantel?', 
+          multiAcceptedAnswers: ["two thousand four hundred and seventy three", "two thousand four hundred seventy three"],
+          writtenPrompt: "Type the remaining tacks needed in written form",
+          skills: ["four_or_more_place_addition", "written_form"],
+          id: "typing.3"
+        ),
+        TypingGameData(
+          displayedProblem: 'Dancers are placed in groups of 4 for a square dance. There are 56 dancers. How many groups of 4 can be made?', 
+          multiAcceptedAnswers: ["fourteen"],
+          writtenPrompt: "Type just the answer",
+          skills: ["two_place_addition", "word_problem_written_form"],
+          id: "typing.4"
+        ),
+        TypingGameData(
+          displayedProblem: '194 + 203 + 576 = 973', 
+          multiAcceptedAnswers: ["one hundred ninety four plus two hundred three plus five hundred seventy six is nine hundred seventy three",
+          "one hundred and ninety four plus two hundred and three plus five hundred and seventy six is nine hundred and seventy three"],
+          writtenPrompt: "Type the expression in written form. Use 'and' as needed.",
+          skills: ["three_place_addition", "written_form"],
+          id: "typing.5"
+        ),
+        FillBlanksGameData(
+          displayedProblem: 'A puppet show has three acts. Each act is 20 minutes long. There are 10-minute intermissions between the acts. How long will the show last?', 
+          multiAcceptedAnswers: ["times", "plus", "equals"], 
+          writtenPrompt: 'Use the options below to answer the word problem.', 
+          blankForm: "twenty minutes ____ three acts ____ ten intermissions times three acts ____ ninety minutes total.", 
+          optionList: [ "plus", "minus", "times", "minus ", "divided by", "equals"
+          ],
+          skills: ["multiple_operations", "written_form", "time"],
+          id: "fill.4"
+        ),
+        FillBlanksGameData(
+          displayedProblem: '195,037', 
+          multiAcceptedAnswers: ["hundred thousands", "hundreds", "ones", "ten thousands", "tens", "thousands"], 
+          writtenPrompt: 'Use the blocks to label the place value of each number', 
+          blankForm: "1: ____ , 0: ____ , 7: ____ , 9: ____ , 3: ____ , 5: ____ ", 
+          optionList: [
+            "ones", "tens", "hundreds", "ten thousands", "hundred thousands", "thousands"
+          ],
+          skills: ["four_or_more_number_places", "written_form"],
+          id: "fill.5"
+        ),
+        TypingGameData(
+          displayedProblem: 'Mary Beth has 215 stickers. She wants to fill 2 albums with the same number of stickers in each. She figures out that about 107 stickers will fit in each, with one left over.', 
+          multiAcceptedAnswers: ["two hundred and fifteen divided by two is one hundred seven and five tenths", "two hundred and fifteen over two is one hundred seven and five tenths"],
+          writtenPrompt: "Write the number sentence (or expression) representing this problem using division in written form.",
+          skills: ["three_place_division", "written_form", "number_sentences"],
+          id: "typing.10"
+        ),
+        PlaybackGameData(
+          webAudioLink: '/audio/level_up_3h.mp3', 
+          multiAcceptedAnswers: [
+            ["twenty eight"]
+          ],
+          optionList: [
+            "twenty", "twenty nine", "twenty eight", "fourteen", "fourty two", "fifteen", "forty-eight"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below", 
+          audioTranscript: "The refreshment table includes cups of fruit punch. There are 84 cups of fruit punch in one bowl. Suppose each dancer can get 3 cups of punch from the bowl. How many dancers does the bowl serve?",
+          skills: ["spoken_written_form", "single_digit_division"],
+          id: "playback.9"
+        ),
+      ]
+    );
+  }
+
+  void initHardModeBank() {
+    hardModeBank.addAll(
+      [
+        FillBlanksGameData(
+          displayedProblem: '0.1294', 
+          multiAcceptedAnswers: ["tenths", "ten thousandths", "hundredths", "thousandths", "ones"], 
+          writtenPrompt: 'Use the options below to answer the word problem.', 
+          blankForm: "1: ____ , 4: ____ , 2: ____ , 9: ____ , 0: ____", 
+          optionList: [
+            "ones", "hundreds", "tenths", "hundreths", "thousandths", "hundreds", "ten thousandths"
+          ],
+          skills: ["four_or_more_number_places", "written_form"],
+          id: "fill.6"
+        ),
+        FillBlanksGameData(
+          displayedProblem: 'one thousand two hundred ninety-four ten-thousandths', 
+          multiAcceptedAnswers: ["1", "2", "9", "2"], 
+          writtenPrompt: 'Create the number form of this number written in written form', 
+          blankForm: "0. ____ ____ ____ ____", 
+          optionList: [
+            "1", "3", "5", "7", "9", "2", "4", "6", "8"
+          ],
+          skills: ["four_or_more_number_places", "written_form"],
+          id: "fill.7"
+        ),
+        TypingGameData(
+          displayedProblem: '0.294', 
+          multiAcceptedAnswers: ["two hundred and ninety four thousandths", "zero and two hundred and ninety four thousandths"],
+          writtenPrompt: "Type this number in written form.",
+          skills: ["written_three_number_places", "written_form"],
+          id: "typing.6"
+        ),
+        TypingGameData(
+          displayedProblem: '1/4 + 1/2 = 3/4', 
+          multiAcceptedAnswers: ["one fourth plus one half is three fourths"],
+          writtenPrompt: "Type out the expression in written form",
+          skills: ["fractions", "written_form"],
+          id: "typing.7"
+        ),
+        ReadAloudGameData(
+          displayedProblem: "Seven china-doll painters each painted 2 eyes on each of 22 doll faces a day. How many eyes in all did they paint in one day?", 
+          addtionalInstructions: "Only say the answer, do not repeat the expression.",
+          multiAcceptedAnswers: [["three hundred and eight"], ["three hundred eight"], ["308"]],
+          skills: ["two_place_multiplication", "self-spoken_written_form"],
+          id: "reading.3"
+        ),
+        ReadAloudGameData(
+          displayedProblem: "There are 36,200 pencils on each of 4 shelves at the office supply manufacturer's warehouse. How many pencils are there altogether?", 
+          writtenPrompt: "What is the product of the following expression?",
+          addtionalInstructions: "Only say the answer, do not repeat the expression.",
+          multiAcceptedAnswers: [["one hundred and forty four thousand eight hundred"], ["144800"], ["one hundred and forty four thousand and eight hundred"]],
+          skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
+          id: "reading.4"
+        ),
+        ReadAloudGameData(
+          displayedProblem: 'Gerald started a new collection with 325 bottle caps. He collects 158 more caps in September and 217 more in October. How many bottle caps did he have at the end of October?', 
+          multiAcceptedAnswers: [
+            ["seven hundred"]
+          ],
+          writtenPrompt: 'Answer the short-response question.',
+          skills: ["three_place_addition", "self-spoken_written_form"],
+          id: "reading.5"
+        ),
+        PlaybackGameData(
+          webAudioLink: '', 
+          multiAcceptedAnswers: [
+            ["seven"]
+          ],
+          optionList: [
+            "ten", "eight", "five", "three", "six", "one", "seven", "nine"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below. A 'mobile' is a a decorative structure that spins freely in the air",
+          audioTranscript: "Art wants to display 35 of his origami figures by hanging an equal number on each of 5 mobiles. How many figures will Art hang from each mobile?",
+          skills: ["spoken_written_form", "single_digit_division"],
+          id: "playback.6"
+        ),
+        PlaybackGameData(
+          webAudioLink: '/audio/level_up_3h.mp3', 
+          multiAcceptedAnswers: [
+            ["She", "is", "forty", "years-old"]
+          ],
+          optionList: [
+            "She", "eight", "five", "forty", "thrity-two", "is", "forty-eight", "years-old"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below", 
+          audioTranscript: "If Sally's mother is 8 times older than her, and Sally is 5 years-old, how old is Sally's mother?",
+          skills: ["spoken_written_form", "single_digit_multiplication"],
+          id: "playback.7"
+        ),
+        PlaybackGameData(
+          webAudioLink: '/audio/level_up_3h.mp3', 
+          multiAcceptedAnswers: [
+            ["fourteen"]
+          ],
+          optionList: [
+            "fifteen", "eleven", "seventeen", "fourteen", "twenty", "tweleve", "thirteen", "sixteen"
+          ],
+          writtenPrompt: "Listen to the audio and then create your response with the choices below", 
+          audioTranscript: "Dancers are placed in groups of 4 for a square dance. There are 56 dancers. How many groups of 4 can be made?",
+          skills: ["spoken_written_form", "single_digit_division"],
+          id: "playback.8"
+        ),
+        ReadAloudGameData(
+          displayedProblem: "Laura addresses 127 envelopes every week. Each envelope contains 4 pieces of paper. How many envelopes does Laura address in one year? (There are 52 weeks in a year)", 
+          writtenPrompt: "What is the product of the following expression?",
+          addtionalInstructions: "Only say the product, do not repeat the expression.",
+          multiAcceptedAnswers: [["six thousand six hundred and four"], ["6604"]],
+          skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
+          id: "reading.6"
+        ),
+        ReadAloudGameData(
+          displayedProblem: "21 x 11 = ??", 
+          writtenPrompt: "What is the product of the following expression?",
+          addtionalInstructions: "Only say the product, do not repeat the expression.",
+          multiAcceptedAnswers: [["two hundred thirty one"], ["231"]],
+          skills: ["two_place_multiplication", "self-spoken_written_form"],
+          id: "reading.7"
+        ),
+        TypingGameData(
+          displayedProblem: '320.5 + 139.1 = 459.6', 
+          multiAcceptedAnswers: ["three hundred twenty and five tenths plus one hundred thirty nine and one tenths"],
+          writtenPrompt: "Type out the expression in written form",
+          skills: ["four_or_more_place_addition", "written_form"],
+          id: "typing.8"
+        ),
+        TypingGameData(
+          displayedProblem: 'A piece of fabric is 52 inches long. Sally cuts it into 4 equal pieces to make costumes for puppets. Each piece is 13 inches long.', 
+          multiAcceptedAnswers: ["fifty two divided by four is thirteen", "fifty two over four is thirteen","fifty two divided by four equals thirteen", "fifty two over four equals thirteen"],
+          writtenPrompt: "Write the number sentence (or expression) representing this problem using division in written form.",
+          skills: ["two_place_division", "written_form", "number_sentences"],
+          id: "typing.9"
+        ),
+      ]
+    );
+  }
+  
   FillBlanksGameData getRandomFillBlanksElement() {
     if (fillBlanksBank.isNotEmpty) {
       int randomIndex = random.nextInt(fillBlanksBank.length);
@@ -777,6 +1198,15 @@ class GameDataBank {
       return typingBank[randomIndex];
     } else {
       throw Exception('The typingBank data bank is empty');
+    }
+  }
+
+  GameData getRandomEasyElement() {
+    if (easyModeBank.isNotEmpty) {
+      int randomIndex = random.nextInt(easyModeBank.length);
+      return easyModeBank[randomIndex];
+    } else {
+      throw Exception('The easyModeBank data bank is empty');
     }
   }
 

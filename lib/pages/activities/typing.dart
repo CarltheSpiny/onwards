@@ -12,17 +12,32 @@ import 'package:onwards/pages/home.dart';
 import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
+const TypingGameData dummyData = TypingGameData(displayedProblem: "", multiAcceptedAnswers: ["", ""], skills: []);
+
 class TypeActivityScreen extends StatelessWidget {
+  final ColorProfile colorProfile;
+  final TypingGameData typingGameData;
+  final bool fromLevelSelect;
+
+  /// The default constructor that doesn't ask for the gameData. 
   const TypeActivityScreen({
     super.key,
     this.colorProfile = lightFlavor,
+    this.typingGameData = dummyData,
+    this.fromLevelSelect = false
   });
 
-  final ColorProfile colorProfile;
+/// Using this constructor allows a gameData to be passed instead of randomly picked from the bank
+  const TypeActivityScreen.fromLevelSelect({required TypingGameData typingData, super.key}) :
+    colorProfile = lightFlavor,
+    typingGameData = typingData,
+    fromLevelSelect = true;
 
+  
   @override
   Widget build(BuildContext context) {
-    TypingGameData typingGameData = bank.getRandomTypingElement();
+    TypingGameData randomGameData = bank.getRandomTypingElement();
 
     return Scaffold(
       appBar: AppBar(
@@ -32,13 +47,23 @@ class TypeActivityScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.only(top: 40),
-        child: GameForm(
+        child: !fromLevelSelect ? 
+        GameForm(
+          // Using the bank's random game data
+          answers: randomGameData.multiAcceptedAnswers, 
+          questionLabel: randomGameData.displayedProblem,
+          instructions: randomGameData.writtenPrompt, 
+          colorProfile: colorProfile, 
+          skills: randomGameData.skills,
+        ) : 
+        GameForm(
+          // Using the passed gameData
           answers: typingGameData.multiAcceptedAnswers, 
           questionLabel: typingGameData.displayedProblem,
           instructions: typingGameData.writtenPrompt, 
           colorProfile: colorProfile, 
           skills: typingGameData.skills,
-        ),
+        )
       )
     );
   }
