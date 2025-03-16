@@ -15,37 +15,60 @@ import 'package:onwards/pages/score_display.dart';
 import 'package:onwards/pages/tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const PlaybackGameData dummyData = PlaybackGameData(webAudioLink: "", multiAcceptedAnswers: [], writtenPrompt: "", optionList: [], skills: []);
+
 class PlaybackActivityScreen extends StatelessWidget {
-  const PlaybackActivityScreen(
-    {super.key,
+  final ColorProfile colorProfile;
+  final PlaybackGameData playbackGameData;
+  final bool fromLevelSelect;
+
+  const PlaybackActivityScreen({
+    super.key,
     this.colorProfile = lightFlavor,
+    this.playbackGameData = dummyData,
+    this.fromLevelSelect = false
   });
 
-  final ColorProfile colorProfile;
+  const PlaybackActivityScreen.fromLevelSelect({super.key, required PlaybackGameData gameData, required ColorProfile profile}) :
+    colorProfile = profile,
+    playbackGameData = gameData,
+    fromLevelSelect = true;
 
   @override
   Widget build(BuildContext context) {
-    PlaybackGameData playbackData = bank.getRandomPlaybackElement();
+    PlaybackGameData randomData = gameDataBank.getRandomPlaybackElement();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Playback and Answer Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [ProgressBar(), ScoreDisplayAction(), CalcButton()]
+        actions: const [ScoreDisplayAction(), CalcButton()]
       ),
       body: Container(
         decoration: colorProfile.backBoxDecoration,
-        child: PlaybackGameForm(
-          audioSource: AssetSource(playbackData.webAudioLink),
-          answers: playbackData.multiAcceptedAnswers, 
-          questionLabel: playbackData.audioTranscript, 
-          maxSelectedAnswers: playbackData.getMinSelection(), 
-          buttonOptions: playbackData.optionList,
-          titleQuestion: playbackData.writtenPrompt,
-          showArithmitic: true,
-          colorProfile: colorProfile,
-          skills: playbackData.skills,
-        ),
+        child: !fromLevelSelect ?
+          PlaybackGameForm(
+            audioSource: AssetSource(randomData.webAudioLink),
+            answers: randomData.multiAcceptedAnswers, 
+            questionLabel: randomData.audioTranscript, 
+            maxSelectedAnswers: randomData.getMinSelection(), 
+            buttonOptions: randomData.optionList,
+            titleQuestion: randomData.writtenPrompt,
+            showArithmitic: true,
+            colorProfile: colorProfile,
+            skills: randomData.skills,
+          ) :
+          PlaybackGameForm(
+            audioSource: AssetSource(playbackGameData.webAudioLink),
+            answers: playbackGameData.multiAcceptedAnswers, 
+            questionLabel: playbackGameData.audioTranscript, 
+            maxSelectedAnswers: playbackGameData.getMinSelection(), 
+            buttonOptions: playbackGameData.optionList,
+            titleQuestion: playbackGameData.writtenPrompt,
+            showArithmitic: true,
+            colorProfile: colorProfile,
+            skills: playbackGameData.skills,
+          ),
       )
     );
   }
@@ -118,8 +141,6 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
 
   @override
   void initState() {
-    Random random = Random();
-    widget.buttonOptions.shuffle(random);
     maxSelection = widget.maxSelectedAnswers;
     
     correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
@@ -566,6 +587,10 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                 ],
               ),  
             )
+          ),
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ProgressBar(),
           )
         ],
       ),

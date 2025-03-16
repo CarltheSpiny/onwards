@@ -5,20 +5,20 @@ const lightStyle = TextStyle(color: Colors.black);
 
 const ColorProfile lightFlavor = ColorProfile(
     backgroundColor: Colors.white,
-    headerColor: Color.fromARGB(255, 210, 210, 210),
-    buttonColor: Colors.grey, 
+    headerColor: Colors.lightBlue,
+    buttonColor: Colors.blueGrey, 
     textColor: Colors.black,
     contrastTextColor: Colors.black,
     checkAnswerButtonColor: Colors.green,
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_blank_background.png"), 
+        image: AssetImage("assets/images/blank.png"), 
         repeat: ImageRepeat.repeat,
         scale: 0.4
       )
     ),
-    backgroundImage: AssetImage("/images/eb_blank_background.png"),
+    backgroundImage: AssetImage("assets/images/blank.png"),
     idKey: "light flavor"
   );
 
@@ -32,14 +32,13 @@ const ColorProfile lightFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/eb_blank_background.png"), 
-        repeat: ImageRepeat.repeat,
-        scale: 0.4,
+        image: AssetImage("assets/images/blank.png"), 
+        fit: BoxFit.cover,
         invertColors: true
       ),
       color: Color.fromARGB(255, 0, 0, 0),
     ),
-    backgroundImage: AssetImage("/images/eb_blank_background.png"),
+    backgroundImage: AssetImage("assets/images/blank.png"),
     idKey: "dark flavor"
   );
 
@@ -53,12 +52,12 @@ const ColorProfile plainFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/space.png"), 
+        image: AssetImage("assets/images/space.png"), 
         fit: BoxFit.cover
       ),
       color: Colors.white
     ),
-    backgroundImage: AssetImage("/images/space.png"),
+    backgroundImage: AssetImage("assets/images/space.png"),
     idKey: "plain flavor"
   );
 
@@ -72,12 +71,12 @@ const ColorProfile mintFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/mint_flavor.png"),
+        image: AssetImage("assets/images/mint_flavor.png"),
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 18, 165, 170),
     ),
-    backgroundImage: AssetImage("/images/mint_flavor.png"),
+    backgroundImage: AssetImage("assets/images/mint_flavor.png"),
     idKey: "mint flavor"
   );
 
@@ -91,12 +90,12 @@ const ColorProfile strawberryFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/rad_red.png"), 
+        image: AssetImage("assets/images/rad_red.png"), 
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 197, 81, 187),
     ),
-    backgroundImage: AssetImage("/images/rad_red.png"),
+    backgroundImage: AssetImage("assets/images/rad_red.png"),
     idKey: "strawberry flavor"
   );
 
@@ -110,12 +109,12 @@ const ColorProfile bananaFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/yellow.png"), 
+        image: AssetImage("assets/images/yellow.png"), 
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 255, 251, 0),
     ),
-    backgroundImage: AssetImage("/images/yellow.png"),
+    backgroundImage: AssetImage("assets/images/yellow.png"),
     idKey: "banana flavor"
   );
 
@@ -129,12 +128,12 @@ const ColorProfile peanutFlavor = ColorProfile(
     clearAnswerButtonColor: Colors.red,
     backBoxDecoration: BoxDecoration(
       image: DecorationImage(
-        image: AssetImage("/images/dreamy.png"), 
+        image: AssetImage("assets/images/dreamy.png"), 
         fit: BoxFit.cover
       ),
       color: Color.fromARGB(255, 168, 98, 79),
     ),
-    backgroundImage: AssetImage("/images/dreamy.png"),
+    backgroundImage: AssetImage("assets/images/dreamy.png"),
     idKey: "peanut flavor"
   );
 

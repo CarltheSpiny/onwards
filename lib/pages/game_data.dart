@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:onwards/pages/activities/game_series.dart';
 import 'package:onwards/pages/home.dart';
 
 /// Fill in the blank needs the question to show with blanks, 
@@ -18,7 +19,7 @@ class GameData {
 
 // Unique ID for each question; Should be meaningful
 class PlaybackGameData extends GameData {
-  PlaybackGameData({
+  const PlaybackGameData({
     required this.webAudioLink,
     required this.multiAcceptedAnswers,
     required this.writtenPrompt,
@@ -41,7 +42,7 @@ class PlaybackGameData extends GameData {
 }
 
 class JumbleGameData extends GameData {
-  JumbleGameData({
+  const JumbleGameData({
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
     this.writtenPrompt = "Use the buttons below to answer the prompt",
@@ -67,7 +68,7 @@ class JumbleGameData extends GameData {
 }
 
 class ReadAloudGameData extends GameData {
-  ReadAloudGameData({
+  const ReadAloudGameData({
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
     this.writtenPrompt = "Answer the question by speaking into to the microphone.",
@@ -105,7 +106,7 @@ class TypingGameData extends GameData {
 }
 
 class FillBlanksGameData extends GameData{
-  FillBlanksGameData({
+  const FillBlanksGameData({
     required this.displayedProblem,
     required this.multiAcceptedAnswers,
     required this.writtenPrompt,
@@ -162,6 +163,9 @@ class GameDataBank {
     initReadingBank();
     initTypingBank();
     initFillBlanksBank();
+    initEasyModeBank();
+    initHardModeBank();
+    initIntermediateModeBank();
     logger.i("Iniitalized the game questions from the disk");
 
     // shuffle bank; Note: Getter for these types are randomized too
@@ -177,7 +181,7 @@ class GameDataBank {
     jumbleBank.addAll(
       // an example of a jumble game data object. This one does use the optional writtenPrompt parameter
       [
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
           multiAcceptedAnswers: [
             ["She", "is", "forty", "years-old"]
@@ -189,7 +193,7 @@ class GameDataBank {
           id: "jumble.1",
           skills: ["single_digit_addition", "word_problem_written_form"],
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: 'Franklin has a set of building blocks with 176 pieces. He received 2 more sets as gifts. One has 95 pieces; the other has 160 pieces. How many building blocks does Franklin have all together?', 
           multiAcceptedAnswers: [
             ["Franklin", "has", "four hundred and thirty one", "blocks"]
@@ -201,7 +205,7 @@ class GameDataBank {
           id: "jumble.2",
           skills: ["word_problem_written_form", "three_place_addition"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. Did the two teams hit the target 800 times? If not, by how much did they miss?', 
           multiAcceptedAnswers: [
             ["They", "missed", "twenty-one", "times"]
@@ -213,7 +217,7 @@ class GameDataBank {
           id: "jumble.3",
           skills: ["word_problem_written_form", "multiple_operations", "three_place_subtraction"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '4153 + 3567 = 7720', 
           multiAcceptedAnswers: [
             ['four thousand one hundred and fifty three', "plus", 'three thousand five hundred and sixty seven', 'equals', 'seven thousand seven hundred and twenty'], 
@@ -224,7 +228,7 @@ class GameDataBank {
           id: "jumble.4",
           skills: ["written_four_place_number_values"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '375 + 109 = 484', 
           multiAcceptedAnswers: [
             ['three hundred seventy five', "plus", 'one hundred and nine', 'equals', 'four hundred eighty four']
@@ -234,7 +238,7 @@ class GameDataBank {
           id: "jumble.5",
           skills: ["written_three_place_number_values"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '158 + 217 + 325 = 700', 
           multiAcceptedAnswers: [
             ['one hundred and fifty eight', "plus", 'two hundred and seventeen', 'plus ', 'three hundred and twenty five', 'equals', 'seven hundred'],
@@ -245,7 +249,7 @@ class GameDataBank {
           id: "jumble.6",
           skills: ["written_three_place_number_values, multiple_operations"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '176 + 95 + 160 = 431', 
           multiAcceptedAnswers: [
             ['one hundred and seventy six', "plus", 'ninety five', 'plus ', 'one hundred and sixty', 'equals', 'four hundred and thirty one'],
@@ -256,7 +260,7 @@ class GameDataBank {
           id: "jumble.7",
           skills: ["written_two_place_number_values, multiple_operations"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '5.32 + 4.63 = 9.95', 
           multiAcceptedAnswers: [
             ['five and thirty two hundredths', "plus", 'four and sixty three hundredths', 'equals', 'nine and ninety five hundredths']
@@ -267,7 +271,7 @@ class GameDataBank {
           writtenPrompt: "Write your answer in proper written form.",
           skills: ["written_decimals_two_number_places"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '0.293 + 1.954 = 2.247', 
           multiAcceptedAnswers: [
             ['two hundred and nintey three thousandths', "plus", 'one and nine hundred and fifty four thousandths', 'equals', 'two and two hundred and fourty seven thousandths']
@@ -278,7 +282,7 @@ class GameDataBank {
           writtenPrompt: "Write your answer in proper written form.",
           skills: ["written_decimals_three_number_places"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '31 + 9 = 18 + 22', 
           multiAcceptedAnswers: [
             // this one has the plus with a space first, then the normal plus (equals)
@@ -305,7 +309,7 @@ class GameDataBank {
           id: "jumble.10",
           skills: ["multiple_operations"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: "To raise money for the band trip, 13 students showed up to help at the Benefit the Band Car Wash. They charged \$12 for a car wash and by the end of the day had washed a total of 68 cars. How much money did they earn?", 
           writtenPrompt: "What is the product of the following expression?",
           optionList: [
@@ -323,7 +327,7 @@ class GameDataBank {
 
     playbackBank.addAll(
       [
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["six"]
@@ -336,7 +340,7 @@ class GameDataBank {
           skills: ["single_digit_addition", "spoken_written_form"],
           id: "playback.1"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["eight"]
@@ -349,7 +353,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.2"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["one"]
@@ -362,7 +366,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.3"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["eight"]
@@ -375,7 +379,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "money", "single_digit_division"],
           id: "playback.4"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["two"]
@@ -388,7 +392,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "money", "single_digit_division"],
           id: "playback.5"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["seven"]
@@ -401,7 +405,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.6"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["She", "is", "forty", "years-old"]
@@ -414,7 +418,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_multiplication"],
           id: "playback.7"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["fourteen"]
@@ -427,7 +431,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.8"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["twenty eight"]
@@ -440,7 +444,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.9"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["two", "hundred"]
@@ -461,7 +465,7 @@ class GameDataBank {
 
     readingBank.addAll(
       [
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "14 x 34 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
@@ -469,21 +473,21 @@ class GameDataBank {
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.1"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "When a number is multiplied by 8, the product is 64,000. What is that number?", 
           addtionalInstructions: "Only say the product, do not repeat the expression.",
           multiAcceptedAnswers: [["eight thousand"], ["8000"]],
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.2"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "Seven china-doll painters each painted 2 eyes on each of 22 doll faces a day. How many eyes in all did they paint in one day?", 
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
           multiAcceptedAnswers: [["three hundred and eight"], ["three hundred eight"], ["308"]],
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.3"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "There are 36,200 pencils on each of 4 shelves at the office supply manufacturer's warehouse. How many pencils are there altogether?", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
@@ -491,7 +495,7 @@ class GameDataBank {
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.4"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: 'Gerald started a new collection with 325 bottle caps. He collects 158 more caps in September and 217 more in October. How many bottle caps did he have at the end of October?', 
           multiAcceptedAnswers: [
             ["seven hundred"]
@@ -500,7 +504,7 @@ class GameDataBank {
           skills: ["three_place_addition", "self-spoken_written_form"],
           id: "reading.5"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "Laura addresses 127 envelopes every week. Each envelope contains 4 pieces of paper. How many envelopes does Laura address in one year? (There are 52 weeks in a year)", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
@@ -508,7 +512,7 @@ class GameDataBank {
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.6"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "21 x 11 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
@@ -516,7 +520,7 @@ class GameDataBank {
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.7"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "298 x 12 + 30 = 3,606", 
           writtenPrompt: "Read the result of the following expression.",
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
@@ -524,7 +528,7 @@ class GameDataBank {
           skills: ["three_or_more_place_multiplication", "multiple_operations", "self-spoken_written_form"],
           id: "reading.8"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "1094 + 4098 = 5192", 
           writtenPrompt: "Read this expression in written form.",
           multiAcceptedAnswers: [["one thousand and ninety four plus four thousand and nintey eight equals five thousand one hundred and ninety two"]],
@@ -538,35 +542,35 @@ class GameDataBank {
   void initTypingBank() {
     typingBank.addAll(
       [
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '4153 + 3567 = 7720', 
           multiAcceptedAnswers: ["four thousand one hundred and fifty three plus three thousand five hundred and sixty seven equals seven thousand seven hundred and twenty",
           "four thousand one hundred and fifty three plus three thousand five hundred and sixty seven is seven thousand seven hundred and twenty"],
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.1"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Patrick has filled 1,485 of 3,000 baseball cards. How many cards are left to be filled?', 
           multiAcceptedAnswers: ["one thousand five hundred and fifteen", "one thousand five hundred fifteen"],
           writtenPrompt: "Type the remaining card amount in standard written form.",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.2"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Elizabeth and Jeanne are covering a fireplace mantel with 4500 fancy tacks. Elisabeth has added 934 tacks to the mantel. Jeanne has added 1,093 tacks. How many tacks do they have to add to complete the mantel?', 
           multiAcceptedAnswers: ["two thousand four hundred and seventy three", "two thousand four hundred seventy three"],
           writtenPrompt: "Type the remaining tacks needed in written form",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.3"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Dancers are placed in groups of 4 for a square dance. There are 56 dancers. How many groups of 4 can be made?', 
           multiAcceptedAnswers: ["fourteen"],
           writtenPrompt: "Type just the answer",
           skills: ["two_place_addition", "word_problem_written_form"],
           id: "typing.4"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '194 + 203 + 576 = 973', 
           multiAcceptedAnswers: ["one hundred ninety four plus two hundred three plus five hundred seventy six is nine hundred seventy three",
           "one hundred and ninety four plus two hundred and three plus five hundred and seventy six is nine hundred and seventy three"],
@@ -574,42 +578,42 @@ class GameDataBank {
           skills: ["three_place_addition", "written_form"],
           id: "typing.5"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '0.294', 
           multiAcceptedAnswers: ["two hundred and ninety four thousandths", "zero and two hundred and ninety four thousandths"],
           writtenPrompt: "Type this number in written form.",
           skills: ["written_three_number_places", "written_form"],
           id: "typing.6"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '1/4 + 1/2 = 3/4', 
           multiAcceptedAnswers: ["one fourth plus one half is three fourths"],
           writtenPrompt: "Type out the expression in written form",
           skills: ["fractions", "written_form"],
           id: "typing.7"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '320.5 + 139.1 = 459.6', 
           multiAcceptedAnswers: ["three hundred twenty and five tenths plus one hundred thirty nine and one tenths"],
           writtenPrompt: "Type out the expression in written form",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.8"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'A piece of fabric is 52 inches long. Sally cuts it into 4 equal pieces to make costumes for puppets. Each piece is 13 inches long.', 
           multiAcceptedAnswers: ["fifty two divided by four is thirteen", "fifty two over four is thirteen","fifty two divided by four equals thirteen", "fifty two over four equals thirteen"],
           writtenPrompt: "Write the number sentence (or expression) representing this problem using division in written form.",
           skills: ["two_place_division", "written_form", "number_sentences"],
           id: "typing.9"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Mary Beth has 215 stickers. She wants to fill 2 albums with the same number of stickers in each. She figures out that about 107 stickers will fit in each, with one left over.', 
           multiAcceptedAnswers: ["two hundred and fifteen divided by two is one hundred seven and five tenths", "two hundred and fifteen over two is one hundred seven and five tenths"],
           writtenPrompt: "Write the number sentence (or expression) representing this problem using division in written form.",
           skills: ["three_place_division", "written_form", "number_sentences"],
           id: "typing.10"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: "Andy bought 7 videos at the mall. Each video cost \$14.95. How much money did he spend?", 
           writtenPrompt: "What is the answer of the following expression?",
           multiAcceptedAnswers: ["one hundred and four dollars and sixty five cents", "104.65", "\$104.65", "one hundred and four and sixty five hundreths"],
@@ -623,7 +627,7 @@ class GameDataBank {
   void initFillBlanksBank() {
     fillBlanksBank.addAll(
       [
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
           multiAcceptedAnswers: ["forty"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -634,7 +638,7 @@ class GameDataBank {
           skills: ["single_digit_addition", "written_form"],
           id: "fill.1"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. How many times did they hit the target?', 
           multiAcceptedAnswers: ["seven hundred and seventy nine"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -645,7 +649,7 @@ class GameDataBank {
           skills: ["three_place_addition", "written_form"],
           id: "fill.2"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Murphy has an article with 72,885 words and an article with 59,993 words. How many more words does the longer article have?', 
           multiAcceptedAnswers: ["tweleve thousand eight hundred and ninety two"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -656,7 +660,7 @@ class GameDataBank {
           skills: ["four_or_more_place_addition", "written_form"],
           id: "fill.3"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'A puppet show has three acts. Each act is 20 minutes long. There are 10-minute intermissions between the acts. How long will the show last?', 
           multiAcceptedAnswers: ["times", "plus", "equals"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -666,7 +670,7 @@ class GameDataBank {
           skills: ["multiple_operations", "written_form", "time"],
           id: "fill.4"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: '195,037', 
           multiAcceptedAnswers: ["hundred thousands", "hundreds", "ones", "ten thousands", "tens", "thousands"], 
           writtenPrompt: 'Use the blocks to label the place value of each number', 
@@ -677,7 +681,7 @@ class GameDataBank {
           skills: ["four_or_more_number_places", "written_form"],
           id: "fill.5"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: '0.1294', 
           multiAcceptedAnswers: ["tenths", "ten thousandths", "hundredths", "thousandths", "ones"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -688,7 +692,7 @@ class GameDataBank {
           skills: ["four_or_more_number_places", "written_form"],
           id: "fill.6"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'one thousand two hundred ninety-four ten-thousandths', 
           multiAcceptedAnswers: ["1", "2", "9", "2"], 
           writtenPrompt: 'Create the number form of this number written in written form', 
@@ -699,7 +703,7 @@ class GameDataBank {
           skills: ["four_or_more_number_places", "written_form"],
           id: "fill.7"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Pupeteers rehearse 5 days a week, for a total of 4 hours and 10 minutes. Each rehearsal is the same length. How long is each rehearsal?', 
           multiAcceptedAnswers: ["four", "plus", "equals"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -710,7 +714,7 @@ class GameDataBank {
           skills: ["multiple_operations", "written_form"],
           id: "fill.8"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Tickets to a puppet show cost \$5 for adults and \$3 for children under 16. How much would it cost a family of 2 adults and 3 children to attend the puppet show?', 
           multiAcceptedAnswers: ["ten", "nine", "nineteen"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -721,7 +725,7 @@ class GameDataBank {
           skills: ["multiple_operations", "written_form", "money"],
           id: "fill.9"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Andy buys table-tennis balls to make eyes for puppets he is making. They cost \$0.50 a ball. He buys 4 boxes, each with 3 balls. How much does he spend in all?', 
           multiAcceptedAnswers: ["six"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -739,7 +743,7 @@ class GameDataBank {
   void initEasyModeBank() {
     easyModeBank.addAll(
       [
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
           multiAcceptedAnswers: [
             ["She", "is", "forty", "years-old"]
@@ -751,7 +755,7 @@ class GameDataBank {
           id: "jumble.1",
           skills: ["single_digit_addition", "word_problem_written_form"],
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: 'Franklin has a set of building blocks with 176 pieces. He received 2 more sets as gifts. One has 95 pieces; the other has 160 pieces. How many building blocks does Franklin have all together?', 
           multiAcceptedAnswers: [
             ["Franklin", "has", "four hundred and thirty one", "blocks"]
@@ -764,7 +768,7 @@ class GameDataBank {
           skills: ["word_problem_written_form", "three_place_addition"]
         ),
         
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '4153 + 3567 = 7720', 
           multiAcceptedAnswers: [
             ['four thousand one hundred and fifty three', "plus", 'three thousand five hundred and sixty seven', 'equals', 'seven thousand seven hundred and twenty'], 
@@ -775,7 +779,7 @@ class GameDataBank {
           id: "jumble.4",
           skills: ["written_four_place_number_values"]
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["six"]
@@ -788,7 +792,7 @@ class GameDataBank {
           skills: ["single_digit_addition", "spoken_written_form"],
           id: "playback.1"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["eight"]
@@ -801,21 +805,21 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.2"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '4153 + 3567 = 7720', 
           multiAcceptedAnswers: ["four thousand one hundred and fifty three plus three thousand five hundred and sixty seven equals seven thousand seven hundred and twenty",
           "four thousand one hundred and fifty three plus three thousand five hundred and sixty seven is seven thousand seven hundred and twenty"],
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.1"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Patrick has filled 1,485 of 3,000 baseball cards. How many cards are left to be filled?', 
           multiAcceptedAnswers: ["one thousand five hundred and fifteen", "one thousand five hundred fifteen"],
           writtenPrompt: "Type the remaining card amount in standard written form.",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.2"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
           multiAcceptedAnswers: ["forty"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -826,7 +830,7 @@ class GameDataBank {
           skills: ["single_digit_addition", "written_form"],
           id: "fill.1"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. How many times did they hit the target?', 
           multiAcceptedAnswers: ["seven hundred and seventy nine"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -837,7 +841,7 @@ class GameDataBank {
           skills: ["three_place_addition", "written_form"],
           id: "fill.2"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'Murphy has an article with 72,885 words and an article with 59,993 words. How many more words does the longer article have?', 
           multiAcceptedAnswers: ["tweleve thousand eight hundred and ninety two"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -848,7 +852,7 @@ class GameDataBank {
           skills: ["four_or_more_place_addition", "written_form"],
           id: "fill.3"
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '158 + 217 + 325 = 700', 
           multiAcceptedAnswers: [
             ['one hundred and fifty eight', "plus", 'two hundred and seventeen', 'plus ', 'three hundred and twenty five', 'equals', 'seven hundred'],
@@ -859,7 +863,7 @@ class GameDataBank {
           id: "jumble.6",
           skills: ["written_three_place_number_values, multiple_operations"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '176 + 95 + 160 = 431', 
           multiAcceptedAnswers: [
             ['one hundred and seventy six', "plus", 'ninety five', 'plus ', 'one hundred and sixty', 'equals', 'four hundred and thirty one'],
@@ -877,7 +881,7 @@ class GameDataBank {
   void initIntermediateModeBank() {
     intermediateModeBank.addAll(
       [
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. Did the two teams hit the target 800 times? If not, by how much did they miss?', 
           multiAcceptedAnswers: [
             ["They", "missed", "twenty-one", "times"]
@@ -889,7 +893,7 @@ class GameDataBank {
           id: "jumble.3",
           skills: ["word_problem_written_form", "multiple_operations", "three_place_subtraction"]
         ),
-        JumbleGameData(
+        const JumbleGameData(
           displayedProblem: '375 + 109 = 484', 
           multiAcceptedAnswers: [
             ['three hundred seventy five', "plus", 'one hundred and nine', 'equals', 'four hundred eighty four']
@@ -899,7 +903,7 @@ class GameDataBank {
           id: "jumble.5",
           skills: ["written_three_place_number_values"]
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["one"]
@@ -912,7 +916,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.3"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["eight"]
@@ -925,7 +929,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "money", "single_digit_division"],
           id: "playback.4"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["two"]
@@ -938,7 +942,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "money", "single_digit_division"],
           id: "playback.5"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "14 x 34 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
@@ -946,28 +950,28 @@ class GameDataBank {
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.1"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "When a number is multiplied by 8, the product is 64,000. What is that number?", 
           addtionalInstructions: "Only say the product, do not repeat the expression.",
           multiAcceptedAnswers: [["eight thousand"], ["8000"]],
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.2"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Elizabeth and Jeanne are covering a fireplace mantel with 4500 fancy tacks. Elisabeth has added 934 tacks to the mantel. Jeanne has added 1,093 tacks. How many tacks do they have to add to complete the mantel?', 
           multiAcceptedAnswers: ["two thousand four hundred and seventy three", "two thousand four hundred seventy three"],
           writtenPrompt: "Type the remaining tacks needed in written form",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.3"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Dancers are placed in groups of 4 for a square dance. There are 56 dancers. How many groups of 4 can be made?', 
           multiAcceptedAnswers: ["fourteen"],
           writtenPrompt: "Type just the answer",
           skills: ["two_place_addition", "word_problem_written_form"],
           id: "typing.4"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '194 + 203 + 576 = 973', 
           multiAcceptedAnswers: ["one hundred ninety four plus two hundred three plus five hundred seventy six is nine hundred seventy three",
           "one hundred and ninety four plus two hundred and three plus five hundred and seventy six is nine hundred and seventy three"],
@@ -975,7 +979,7 @@ class GameDataBank {
           skills: ["three_place_addition", "written_form"],
           id: "typing.5"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'A puppet show has three acts. Each act is 20 minutes long. There are 10-minute intermissions between the acts. How long will the show last?', 
           multiAcceptedAnswers: ["times", "plus", "equals"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -985,7 +989,7 @@ class GameDataBank {
           skills: ["multiple_operations", "written_form", "time"],
           id: "fill.4"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: '195,037', 
           multiAcceptedAnswers: ["hundred thousands", "hundreds", "ones", "ten thousands", "tens", "thousands"], 
           writtenPrompt: 'Use the blocks to label the place value of each number', 
@@ -996,14 +1000,14 @@ class GameDataBank {
           skills: ["four_or_more_number_places", "written_form"],
           id: "fill.5"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'Mary Beth has 215 stickers. She wants to fill 2 albums with the same number of stickers in each. She figures out that about 107 stickers will fit in each, with one left over.', 
           multiAcceptedAnswers: ["two hundred and fifteen divided by two is one hundred seven and five tenths", "two hundred and fifteen over two is one hundred seven and five tenths"],
           writtenPrompt: "Write the number sentence (or expression) representing this problem using division in written form.",
           skills: ["three_place_division", "written_form", "number_sentences"],
           id: "typing.10"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["twenty eight"]
@@ -1023,7 +1027,7 @@ class GameDataBank {
   void initHardModeBank() {
     hardModeBank.addAll(
       [
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: '0.1294', 
           multiAcceptedAnswers: ["tenths", "ten thousandths", "hundredths", "thousandths", "ones"], 
           writtenPrompt: 'Use the options below to answer the word problem.', 
@@ -1034,7 +1038,7 @@ class GameDataBank {
           skills: ["four_or_more_number_places", "written_form"],
           id: "fill.6"
         ),
-        FillBlanksGameData(
+        const FillBlanksGameData(
           displayedProblem: 'one thousand two hundred ninety-four ten-thousandths', 
           multiAcceptedAnswers: ["1", "2", "9", "2"], 
           writtenPrompt: 'Create the number form of this number written in written form', 
@@ -1045,28 +1049,28 @@ class GameDataBank {
           skills: ["four_or_more_number_places", "written_form"],
           id: "fill.7"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '0.294', 
           multiAcceptedAnswers: ["two hundred and ninety four thousandths", "zero and two hundred and ninety four thousandths"],
           writtenPrompt: "Type this number in written form.",
           skills: ["written_three_number_places", "written_form"],
           id: "typing.6"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '1/4 + 1/2 = 3/4', 
           multiAcceptedAnswers: ["one fourth plus one half is three fourths"],
           writtenPrompt: "Type out the expression in written form",
           skills: ["fractions", "written_form"],
           id: "typing.7"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "Seven china-doll painters each painted 2 eyes on each of 22 doll faces a day. How many eyes in all did they paint in one day?", 
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
           multiAcceptedAnswers: [["three hundred and eight"], ["three hundred eight"], ["308"]],
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.3"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "There are 36,200 pencils on each of 4 shelves at the office supply manufacturer's warehouse. How many pencils are there altogether?", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
@@ -1074,7 +1078,7 @@ class GameDataBank {
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.4"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: 'Gerald started a new collection with 325 bottle caps. He collects 158 more caps in September and 217 more in October. How many bottle caps did he have at the end of October?', 
           multiAcceptedAnswers: [
             ["seven hundred"]
@@ -1083,7 +1087,7 @@ class GameDataBank {
           skills: ["three_place_addition", "self-spoken_written_form"],
           id: "reading.5"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '', 
           multiAcceptedAnswers: [
             ["seven"]
@@ -1096,7 +1100,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.6"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["She", "is", "forty", "years-old"]
@@ -1109,7 +1113,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_multiplication"],
           id: "playback.7"
         ),
-        PlaybackGameData(
+        const PlaybackGameData(
           webAudioLink: '/audio/level_up_3h.mp3', 
           multiAcceptedAnswers: [
             ["fourteen"]
@@ -1122,7 +1126,7 @@ class GameDataBank {
           skills: ["spoken_written_form", "single_digit_division"],
           id: "playback.8"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "Laura addresses 127 envelopes every week. Each envelope contains 4 pieces of paper. How many envelopes does Laura address in one year? (There are 52 weeks in a year)", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
@@ -1130,7 +1134,7 @@ class GameDataBank {
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.6"
         ),
-        ReadAloudGameData(
+        const ReadAloudGameData(
           displayedProblem: "21 x 11 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
@@ -1138,14 +1142,14 @@ class GameDataBank {
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.7"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: '320.5 + 139.1 = 459.6', 
           multiAcceptedAnswers: ["three hundred twenty and five tenths plus one hundred thirty nine and one tenths"],
           writtenPrompt: "Type out the expression in written form",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.8"
         ),
-        TypingGameData(
+        const TypingGameData(
           displayedProblem: 'A piece of fabric is 52 inches long. Sally cuts it into 4 equal pieces to make costumes for puppets. Each piece is 13 inches long.', 
           multiAcceptedAnswers: ["fifty two divided by four is thirteen", "fifty two over four is thirteen","fifty two divided by four equals thirteen", "fifty two over four equals thirteen"],
           writtenPrompt: "Write the number sentence (or expression) representing this problem using division in written form.",
@@ -1201,13 +1205,40 @@ class GameDataBank {
     }
   }
 
-  GameData getRandomEasyElement() {
-    if (easyModeBank.isNotEmpty) {
-      int randomIndex = random.nextInt(easyModeBank.length);
-      return easyModeBank[randomIndex];
-    } else {
-      throw Exception('The easyModeBank data bank is empty');
+  List<GameData> getSeriesByDifficulty(DifficultyType type) {
+    switch(type) {
+      case DifficultyType.random:
+      case DifficultyType.easy:
+        return getEasyModeSeries();
+      case DifficultyType.intermediate:
+        return getIntermediateModeSeries();
+      case DifficultyType.hard:
+        return getHardModeSeries();
     }
+  }
+
+  List<GameData> getEasyModeSeries() {
+    if (easyModeBank.isEmpty) {
+      initEasyModeBank();
+    }
+      
+    return easyModeBank;
+  }
+
+  List<GameData> getIntermediateModeSeries() {
+    if (intermediateModeBank.isEmpty) {
+      initIntermediateModeBank();
+    }
+
+    return intermediateModeBank;
+  }
+
+  List<GameData> getHardModeSeries() {
+    if (hardModeBank.isEmpty) {
+      initHardModeBank();
+    } 
+    
+    return hardModeBank;
   }
 
 }

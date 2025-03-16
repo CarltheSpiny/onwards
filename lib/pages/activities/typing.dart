@@ -29,23 +29,24 @@ class TypeActivityScreen extends StatelessWidget {
   });
 
 /// Using this constructor allows a gameData to be passed instead of randomly picked from the bank
-  const TypeActivityScreen.fromLevelSelect({required TypingGameData typingData, super.key}) :
-    colorProfile = lightFlavor,
+  const TypeActivityScreen.fromLevelSelect({required ColorProfile profile,required TypingGameData typingData, super.key}) :
+    colorProfile = profile,
     typingGameData = typingData,
     fromLevelSelect = true;
 
   
   @override
   Widget build(BuildContext context) {
-    TypingGameData randomGameData = bank.getRandomTypingElement();
+    TypingGameData randomGameData = gameDataBank.getRandomTypingElement();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Type it Out Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [ProgressBar(), ScoreDisplayAction(), CalcButton()]
+        actions: const [ScoreDisplayAction(), CalcButton()]
       ),
-      body: Padding(
+      body: Container(
+        decoration: colorProfile.backBoxDecoration,
         padding: const EdgeInsets.only(top: 40),
         child: !fromLevelSelect ? 
         GameForm(
@@ -463,6 +464,10 @@ class _GameFormState extends State<GameForm> {
               ),
             ),
           ),
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ProgressBar(),
+          )
         ],
       )
     );

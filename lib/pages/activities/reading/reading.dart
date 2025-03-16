@@ -9,35 +9,57 @@ import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:onwards/pages/score_display.dart';
 
+const ReadAloudGameData dummyData = ReadAloudGameData(displayedProblem: "", multiAcceptedAnswers: [], skills: []);
+
 class ReadingActivityScreen extends StatelessWidget {
   const ReadingActivityScreen({
     super.key,
     this.colorProfile = lightFlavor,
+    this.readingGameData = dummyData,
+    this.fromLevelSelect = false
   });
 
   final ColorProfile colorProfile;
+  final ReadAloudGameData readingGameData;
+  final bool fromLevelSelect;
+
+  const ReadingActivityScreen.fromLevelSelect({required ReadAloudGameData readingData, required ColorProfile profile, super.key}) :
+    colorProfile = profile,
+    readingGameData = readingData,
+    fromLevelSelect = true;
 
   @override
   Widget build(BuildContext context) {
-    ReadAloudGameData readingData = bank.getRandomReadingElement();
+    ReadAloudGameData randomData = gameDataBank.getRandomReadingElement();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Read Aloud Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [ProgressBar(), ScoreDisplayAction(), CalcButton()]
+        actions: const [ScoreDisplayAction(), CalcButton()]
       ),
-      body: Padding(
+      body: Container(
+        decoration: colorProfile.backBoxDecoration,
         padding: const EdgeInsets.only(top: 40),
-        child: AudioTranscriptionWidget(
-          key: const Key('1'),
-          acceptedAnswers: readingData.multiAcceptedAnswers,
-          questionLabel: readingData.displayedProblem,
-          titleText: readingData.writtenPrompt,
-          useNumWordProtocol: readingData.useNumWordProtocol,
-          colorProfile: colorProfile,
-          skills: readingData.skills,
-        ),
+        child: !fromLevelSelect ?
+          AudioTranscriptionWidget(
+            key: const Key('1'),
+            acceptedAnswers: randomData.multiAcceptedAnswers,
+            questionLabel: randomData.displayedProblem,
+            titleText: randomData.writtenPrompt,
+            useNumWordProtocol: randomData.useNumWordProtocol,
+            colorProfile: colorProfile,
+            skills: randomData.skills,
+          ) :
+          AudioTranscriptionWidget(
+            key: const Key('1'),
+            acceptedAnswers: readingGameData.multiAcceptedAnswers,
+            questionLabel: readingGameData.displayedProblem,
+            titleText: readingGameData.writtenPrompt,
+            useNumWordProtocol: readingGameData.useNumWordProtocol,
+            colorProfile: colorProfile,
+            skills: readingGameData.skills,
+          )
       )
     );
   }

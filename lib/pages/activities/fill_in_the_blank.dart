@@ -10,39 +10,57 @@ import 'package:onwards/pages/home.dart';
 import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The screen for the 'Fill in the Blank' game.
-/// Uses data in the form of GameData 
-///
+const FillBlanksGameData dummyData = FillBlanksGameData(displayedProblem: "", multiAcceptedAnswers: [], writtenPrompt: "", blankForm: "", optionList: [], skills: []);
+
 class FillInActivityScreen extends StatelessWidget {
+  final FillBlanksGameData fillBlanksGameData;
+  final ColorProfile colorProfile;
+  final bool fromLevelSelect;
+
   const FillInActivityScreen({
     super.key,
     this.colorProfile = plainFlavor,
+    this.fillBlanksGameData = dummyData,
+    this.fromLevelSelect = false
   });
 
-  final ColorProfile colorProfile;
+  const FillInActivityScreen.fromLevelSelect({required FillBlanksGameData fillData, required ColorProfile profile, super.key}) : 
+    colorProfile = profile,
+    fillBlanksGameData = fillData,
+    fromLevelSelect = true;
 
   @override
   Widget build(BuildContext context) {
-
-    FillBlanksGameData fillBlanksGameData = bank.getRandomFillBlanksElement();
+    FillBlanksGameData randomGameData = gameDataBank.getRandomFillBlanksElement();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Fill in the Blank Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [ProgressBar(), ScoreDisplayAction(), CalcButton()]
+        actions: const [ScoreDisplayAction(), CalcButton()]
       ),
-      body:Padding(
+      body: Container(
+        decoration: colorProfile.backBoxDecoration,
         padding: const EdgeInsets.only(top: 40),
-        child:  GameForm(
-          answers: fillBlanksGameData.multiAcceptedAnswers, 
-          questionLabel: fillBlanksGameData.displayedProblem,  
-          blankQuestLabel: fillBlanksGameData.blankForm,
-          maxSelectedAnswers: fillBlanksGameData.getMinSelection(),
-          buttonOptions: fillBlanksGameData.optionList,
-          colorProfile: colorProfile,
-          skills: fillBlanksGameData.skills,
-        ),
+        child:  !fromLevelSelect ?
+          GameForm(
+            answers: randomGameData.multiAcceptedAnswers, 
+            questionLabel: randomGameData.displayedProblem,  
+            blankQuestLabel: randomGameData.blankForm,
+            maxSelectedAnswers: randomGameData.getMinSelection(),
+            buttonOptions: randomGameData.optionList,
+            colorProfile: colorProfile,
+            skills: randomGameData.skills,
+          ) :
+          GameForm(
+            answers: fillBlanksGameData.multiAcceptedAnswers, 
+            questionLabel: fillBlanksGameData.displayedProblem,  
+            blankQuestLabel: fillBlanksGameData.blankForm,
+            maxSelectedAnswers: fillBlanksGameData.getMinSelection(),
+            buttonOptions: fillBlanksGameData.optionList,
+            colorProfile: colorProfile,
+            skills: fillBlanksGameData.skills,
+          )
       )
     );
   }
@@ -107,8 +125,6 @@ class GameFormState extends State<GameForm> {
 
   @override
   void initState() {
-    Random random = Random();
-    widget.buttonOptions.shuffle(random);
     maxSelection = widget.maxSelectedAnswers;
     correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
@@ -561,6 +577,10 @@ class GameFormState extends State<GameForm> {
               ],
             ),
           ),
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ProgressBar(),
+          )
         ],
       )
     );

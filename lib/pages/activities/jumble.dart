@@ -14,18 +14,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 
+const JumbleGameData dummyData = JumbleGameData(displayedProblem: '', multiAcceptedAnswers: [], optionList: [], skills: []);
+
 class JumbleActivityScreen extends StatelessWidget {
+  final JumbleGameData jumbleGameData;
+  final ColorProfile colorProfile;
+  final bool fromLevelSelect;
+
   const JumbleActivityScreen({
     super.key,
     this.colorProfile = lightFlavor,
+    this.jumbleGameData = dummyData,
+    this.fromLevelSelect = false
   });
-  
-  final ColorProfile colorProfile;
+
+  const JumbleActivityScreen.fromLevelSelect({required JumbleGameData jumbleData, required ColorProfile profile, super.key}) :
+    colorProfile = profile,
+    jumbleGameData = jumbleData,
+    fromLevelSelect = true;
 
   @override
   Widget build(BuildContext context) {
 
-    JumbleGameData jumbleGameData = bank.getRandomJumbleElement();
+    JumbleGameData randomGameData = gameDataBank.getRandomJumbleElement();
 
     return Scaffold(
       appBar: AppBar(
@@ -33,17 +44,35 @@ class JumbleActivityScreen extends StatelessWidget {
         backgroundColor: colorProfile.headerColor,
         actions: const [ScoreDisplayAction(), CalcButton()]
       ),
-      body: GameForm(
-        answers: jumbleGameData.multiAcceptedAnswers, 
-        questionLabel: jumbleGameData.displayedProblem, 
-        maxSelectedAnswers: jumbleGameData.getMinSelection(), 
-        buttonOptions: jumbleGameData.optionList,
-        titleQuestion: jumbleGameData.writtenPrompt,
-        showArithmitic: true,
-        colorProfile: colorProfile,
-        skills: jumbleGameData.skills,
-        scoreValue: jumbleGameData.score,
-      ),
+      body: Container(
+        decoration: colorProfile.backBoxDecoration,
+        padding: const EdgeInsets.only(top: 40),
+        child: !fromLevelSelect ?
+          GameForm(
+            // Using the bank's random data
+            answers: randomGameData.multiAcceptedAnswers, 
+            questionLabel: randomGameData.displayedProblem, 
+            maxSelectedAnswers: randomGameData.getMinSelection(), 
+            buttonOptions: randomGameData.optionList,
+            titleQuestion: randomGameData.writtenPrompt,
+            showArithmitic: true,
+            colorProfile: colorProfile,
+            skills: randomGameData.skills,
+            scoreValue: randomGameData.score,
+          ) :
+          GameForm(
+            // using the passed gameData
+            answers: jumbleGameData.multiAcceptedAnswers, 
+            questionLabel: jumbleGameData.displayedProblem, 
+            maxSelectedAnswers: jumbleGameData.getMinSelection(), 
+            buttonOptions: jumbleGameData.optionList,
+            titleQuestion: jumbleGameData.writtenPrompt,
+            showArithmitic: true,
+            colorProfile: colorProfile,
+            skills: jumbleGameData.skills,
+            scoreValue: jumbleGameData.score,
+          )
+        )
     );
   }
 }
@@ -116,10 +145,7 @@ class GameFormState extends State<GameForm> {
 
   @override
   void initState() {
-    Random random = Random();
     currentProfile = widget.colorProfile;
-
-    widget.buttonOptions.shuffle(random);
     maxSelection = widget.maxSelectedAnswers;
     correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
@@ -661,9 +687,9 @@ class GameFormState extends State<GameForm> {
             )
           ),
           const Align(
-                    alignment: Alignment.bottomCenter,
-                    child: ProgressBar(),
-                  )
+            alignment: Alignment.bottomCenter,
+            child: ProgressBar(),
+          )
         ],
       )
     );

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/reading/speech_to_text_helper.dart';
+import 'package:onwards/pages/components/progress_bar.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -454,6 +455,10 @@ class AudioTranscriptionWidgetState extends State<AudioTranscriptionWidget> {
                 )
               ],
             ),
+          ),
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ProgressBar(),
           )
         ],
       ),

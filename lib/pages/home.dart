@@ -10,6 +10,7 @@ import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/activities/fill_in_the_blank.dart';
 import 'package:onwards/pages/activities/playback/playback.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/debug_home.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/score_display.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +20,7 @@ const desktopPadding = 81.0;
 const homeWidth = 1400.0;
 const desktopMargin = 8.0;
 
-GameDataBank bank = GameDataBank();
+GameDataBank gameDataBank = GameDataBank();
 HashMap<String, String> skillMap = HashMap();
 
 // Image is currently 4:3 ratio
@@ -72,7 +73,7 @@ class HomeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bank.initBanks();
+    gameDataBank.initBanks();
     addSkills();
     logger.i('Loading app...');
     return const MaterialApp(
@@ -232,62 +233,64 @@ class HomePageState extends State<HomePage> {
     List<Widget> gameCards = <Widget> [
       GameCard(
         imageAsset: const AssetImage(
-          'assets/images/audio-playback-preview.png'
+          'assets/images/easy_mode.png'
         ),
-        gameRoute: "/audio-playback", 
-        gameWidget: PlaybackActivityScreen(colorProfile: currentProfile),
+        gameRoute: "/easy-mode", 
+        gameWidget: SeriesHomePage(colorProfile: currentProfile, difficultyType: DifficultyType.easy,),
         keyId: 0,
-        title: "Playback and Choose",
-        subtitle: "Difficulty: Hard",
-        styleMode: darkStyle,
+        title: "Easy Mode",
+        subtitle: "Light and simple questions",
+        styleMode: TextStyle(color: currentProfile.textColor),
+        colorProfile: currentProfile,
       ),
       GameCard(
         imageAsset: const AssetImage(
-          'assets/images/fill-in-the-blank-preview.png'
+          'assets/images/medium_mode.png'
         ),
-        gameRoute: '/fill-in-the-blank',
-        gameWidget: FillInActivityScreen(colorProfile: currentProfile), 
+        gameRoute: '/intermediate-mode',
+        gameWidget: SeriesHomePage(colorProfile: currentProfile, difficultyType: DifficultyType.intermediate,),
         keyId: 1,
-        title: "Fill in the Blank",
-        subtitle: "Difficulty: Easy",
-        styleMode: darkStyle,
+        title: "Intermediate Mode",
+        subtitle: "More challenging than easy mode",
+        styleMode: TextStyle(color: currentProfile.textColor),
+        colorProfile: currentProfile,
       ),
-      Tooltip(
-        message: "Use jumbled blocks to build the translated phrase",
-        verticalOffset: 130,
-        child: GameCard(
-          imageAsset: const AssetImage(
-            'assets/images/jumble-preview.png'
-          ),
-          gameRoute: '/jumble',
-          gameWidget: JumbleActivityScreen(colorProfile: currentProfile),
-          keyId: 2,
-          title: "Translate Jumble",
-          subtitle: "Difficulty: Medium",
-          styleMode: darkStyle,
+      GameCard(
+        imageAsset: const AssetImage('assets/images/hard_mode.png'),
+        gameRoute: '/hard-mode',
+        gameWidget: SeriesHomePage(
+          colorProfile: currentProfile,
+          difficultyType: DifficultyType.hard,
         ),
+        keyId: 2,
+        title: "Hard Mode",
+        subtitle: "Listening and Speaking may be required",
+        styleMode: TextStyle(color: currentProfile.textColor),
+        colorProfile: currentProfile,
       ),
       GameCard(
         imageAsset: const AssetImage(
-          'assets/images/reading-preview.png'
+          'assets/images/random_mode.png'
         ),
-        gameRoute: '/reading', 
-        gameWidget: ReadingActivityScreen(colorProfile: currentProfile),
+        gameRoute: '/random-mode', 
+        gameWidget: SeriesHomePage(colorProfile: currentProfile, difficultyType: DifficultyType.random,),
         keyId: 3,
-        title: "Read Aloud",
-        subtitle: "Difficulty: Challenging",
-        styleMode: darkStyle,
+        title: "Random Mode",
+        subtitle: "Try on any of the questions in a random selection",
+        styleMode: TextStyle(color: currentProfile.textColor),
+        colorProfile: currentProfile,
       ),
       GameCard(
         imageAsset: const AssetImage(
-          'assets/images/type-preview.png'
+          'assets/images/debug_mode.png'
         ),
-        gameRoute: '/typing', 
-        gameWidget: TypeActivityScreen(colorProfile: currentProfile),
+        gameRoute: '/debug', 
+        gameWidget: const DebugHomePage(),
         keyId: 4,
-        title: "Type it Out",
-        subtitle: "Difficulty: Challenging",
-        styleMode: darkStyle,
+        title: "Debug Mode",
+        subtitle: "Dev Only. For testing purposes.",
+        styleMode: TextStyle(color: currentProfile.textColor),
+        colorProfile: currentProfile,
       )
     ];
 
@@ -313,7 +316,7 @@ class HomePageState extends State<HomePage> {
                   top: 90.0
                 ),
                 children: [
-                  _HomeItem(
+                  CarouselCardItem(
                     child: DesktopCarousel(
                       height: minHeight,
                       colorProfile: currentProfile, 
@@ -353,7 +356,7 @@ class HomePageState extends State<HomePage> {
                   child: ElevatedButton(
                     style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
                     onPressed: _decrementCounter, 
-                    child: const Icon(Icons.arrow_left)
+                    child: Icon(Icons.arrow_left, color: currentProfile.textColor)
                   ),
                 ),
                 Padding(
@@ -371,11 +374,20 @@ class HomePageState extends State<HomePage> {
                   child: ElevatedButton(
                     style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(currentProfile.buttonColor)),
                     onPressed: _incrementCounter,
-                    child: const Icon(Icons.arrow_right),
+                    child: Icon(Icons.arrow_right, color: currentProfile.textColor),
                   ),
                 )
               ],
             ),
+          ],
+        )
+      )
+    );
+  }
+}
+
+/*
+
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Tooltip(
@@ -383,6 +395,17 @@ class HomePageState extends State<HomePage> {
                 verticalOffset: -50,
                 child: GameTestPage(
                   colorProfile: currentProfile
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Tooltip(
+                message: "Easy Mode (10)",
+                verticalOffset: -50,
+                child: GameTestPage(
+                  colorProfile: currentProfile,
+                  difficultyType: DifficultyType.easy,
                 ),
               ),
             ),
@@ -398,15 +421,10 @@ class HomePageState extends State<HomePage> {
                 ),
               )
             ),
-          ],
-        )
-      )
-    );
-  }
-}
+*/
 
-class _HomeItem extends StatelessWidget {
-  const _HomeItem({required this.child});
+class CarouselCardItem extends StatelessWidget {
+  const CarouselCardItem({super.key, required this.child});
 
   final Widget child;
 
@@ -432,12 +450,15 @@ class DesktopCarousel extends StatefulWidget {
     super.key, 
     required this.height, 
     required this.children,
-    this.colorProfile = plainFlavor
+    this.colorProfile = plainFlavor,
+    this.modeHeader = "Game Select: Select the Game you want to try"
   });
 
   final double height;
   final List<Widget> children;
   final ColorProfile colorProfile;
+  final String modeHeader;
+
 
   @override
   DesktopCarouselState createState() => DesktopCarouselState();
@@ -487,7 +508,7 @@ class DesktopCarouselState extends State<DesktopCarousel> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 0.0),
                     child: Text(
-                    "Game Select: Select the Game you want to try",
+                    widget.modeHeader,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -523,6 +544,7 @@ class DesktopCarouselState extends State<DesktopCarousel> {
                   if (showNextButton)
                     _DesktopPageButton(
                       isEnd: true,
+                      colorProfile: widget.colorProfile,
                       onTap: () {
                         controller.animateTo(
                           controller.offset + itemWidth, 
@@ -547,10 +569,12 @@ class _DesktopPageButton extends StatelessWidget {
   const _DesktopPageButton({
     this.isEnd = false,
     this.onTap,
+    this.colorProfile = lightFlavor
   });
 
   final bool isEnd;
   final GestureTapCallback? onTap;
+  final ColorProfile colorProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -573,14 +597,14 @@ class _DesktopPageButton extends StatelessWidget {
                 ? MaterialLocalizations.of(context).nextPageTooltip
                 : MaterialLocalizations.of(context).previousPageTooltip,
             child: Material(
-              color: Colors.black.withOpacity(0.5),
+              color: colorProfile.buttonColor,
               shape: const CircleBorder(),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: onTap,
                 child: Icon(
                   isEnd ? Icons.arrow_forward_ios : Icons.arrow_back_ios,
-                  color: Colors.white,
+                  color: colorProfile.textColor,
                 ),
               ),
             ),
@@ -626,6 +650,7 @@ class GameCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.styleMode,
+    this.colorProfile = plainFlavor
   });
 
   final Widget gameWidget;
@@ -635,6 +660,7 @@ class GameCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final TextStyle? styleMode;
+  final ColorProfile colorProfile;
   
   final desktopMargin = 8.0;
   final minHeight = 240.0;
@@ -645,8 +671,6 @@ class GameCard extends StatelessWidget {
     // final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     final asset = imageAsset;
     final style = styleMode;
-    final titleText = title;
-    final subtitleText = subtitle;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -676,17 +700,17 @@ class GameCard extends StatelessWidget {
                 children: [
                   Container(
                     width: 500.0,
-                    color: const Color.fromARGB(221, 124, 124, 124),
+                    color: colorProfile.buttonColor,
                     child: Column(
                       children: [
                         Text(
-                          titleText,
+                          title,
                           maxLines: 3,
                           overflow: TextOverflow.visible,
                           style: style,
                         ),
                         Text(
-                          subtitleText,
+                          subtitle,
                           maxLines: 5,
                           overflow: TextOverflow.visible,
                           style: style,
@@ -806,7 +830,7 @@ class _OverlayBannerState extends State<OverlayBanner>
           height: 400,
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: AssetImage("/images/correct_overlay.png"),
+              image: AssetImage("assets/images/correct_overlay.png"),
               fit: BoxFit.fitHeight
             ),
           ),
