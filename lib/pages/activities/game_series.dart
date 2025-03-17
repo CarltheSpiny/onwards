@@ -297,7 +297,7 @@ class SeriesHomePageState extends State<SeriesHomePage> {
             Align(
                 alignment: Alignment.center,
                 child: Text(
-                  "Click to start the question series. You will navigate through ${gameDataBank.getSeriesByDifficulty(widget.difficultyType).length} questions. You can use the calculator on the top-right of the screen to help you answer the questions.",
+                  "Click to start the question series. You will navigate through ${gameDataBank.getSeriesByDifficulty(widget.difficultyType).length + 1} questions. You can use the calculator on the top-right of the screen to help you answer the questions.",
                   style: TextStyle(
                       color: widget.colorProfile.textColor, fontSize: 16),
                 ),
