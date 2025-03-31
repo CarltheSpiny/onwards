@@ -4,6 +4,7 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:onwards/pages/activities/fill_in_the_blank.dart';
@@ -14,6 +15,7 @@ import 'package:onwards/pages/activities/typing.dart';
 import 'package:onwards/pages/components/calculator.dart';
 import 'package:onwards/pages/components/progress_bar.dart';
 import 'package:onwards/pages/constants.dart';
+import 'package:onwards/pages/data_manager.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:onwards/pages/score_display.dart';
@@ -61,6 +63,11 @@ enum DifficultyType {
     return type.numId == numId;
   }
 
+  @override
+  String toString() {
+    return identifier;
+  }
+
 }
 
 class SeriesHomePage extends StatefulWidget {
@@ -83,21 +90,30 @@ class SeriesHomePage extends StatefulWidget {
 class SeriesHomePageState extends State<SeriesHomePage> {
   // Set cache to save user data
   final Future<SharedPreferencesWithCache> _prefs =
-    SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct', 'progress'}
-      ));
-  late Future<int> _correctCounter;
-  late Future<double> progress;
+      SharedPreferencesWithCache.create(
+          cacheOptions: const SharedPreferencesWithCacheOptions(
+              allowList: <String>{'correct', 'progress', 'score', 'highscore'}));
+
+  late Future<int> correctCount;
+  late Future<double> gameProgress;
+  late Future<int> gameScore;
+  late Future<int> gameHighscore;
+
   List<Widget> pageTypesList = [];
   List<int> randomPageOrderList = [];
   List<Widget> fixedPageOrderList = [];
   int questionCount = 0;
   int currentProgress = 0;
   double progressForBar = 0.0;
+  int currentScore = 0;
+  bool isHighScoreUpdated = false;
+
+  // Data for database. These are the sequence start times
+  Timestamp startTime = Timestamp.now();
+  Timestamp endTime = Timestamp.now();
 
   /// Resets the number of correct answers back to 0
-  Future<void> _resetCorrectCount() async {
+  Future<void> resetCorrectCount() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     if ((prefs.getInt('correct') ?? 0) <= 0) {
       return;
@@ -105,13 +121,14 @@ class SeriesHomePageState extends State<SeriesHomePage> {
 
     const int correctCounter = 0;
     setState(() {
-      _correctCounter = prefs.setInt('correct', correctCounter).then((_) {
+      correctCount = prefs.setInt('correct', correctCounter).then((_) {
         logger.i("reset counter for this session");
         return correctCounter;
       });
     });
   }
 
+  /// Reset the game progress
   Future<void> resetProgressCount() async {
     final SharedPreferencesWithCache prefs = await _prefs;
     if ((prefs.getDouble('progress') ?? 0) <= 0) {
@@ -120,9 +137,25 @@ class SeriesHomePageState extends State<SeriesHomePage> {
 
     const double progressCache = 0;
     setState(() {
-      progress = prefs.setDouble('progress', progressCache).then((_) {
+      gameProgress = prefs.setDouble('progress', progressCache).then((_) {
         logger.i("reset counter for this session");
         return progressCache;
+      });
+    });
+  }
+
+  /// Reset game score for this session
+  Future<void> resetCurrentScore() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    if ((prefs.getInt('score') ?? 0) <= 0) {
+      return;
+    }
+
+    const int scoreCache = 0;
+    setState(() {
+      gameHighscore = prefs.setInt('score', scoreCache).then((_) {
+        logger.i("reset game score for this session");
+        return scoreCache;
       });
     });
   }
@@ -132,22 +165,44 @@ class SeriesHomePageState extends State<SeriesHomePage> {
     final double progressCache = clampDouble(nextProgress, 0, 1);
 
     setState(() {
-      progress = prefs.setDouble('progress', progressCache).then((_) {
+      gameProgress = prefs.setDouble('progress', progressCache).then((_) {
         logger.d('Updating progress for bar...');
         return progressCache;
+      });
+    });
+  }
+
+  Future<void> increaseHighScore() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
+    int? cachedScore = (prefs.getInt('score') ?? 0);
+    int? cachedHighScore = (prefs.getInt('highscore') ?? 0);
+    bool shouldReplace = cachedScore > cachedHighScore;
+    isHighScoreUpdated = shouldReplace;
+
+    setState(() {
+      int updatedScore = shouldReplace ? cachedScore : cachedHighScore;
+      gameScore = prefs.setInt('highcore', updatedScore).then((_) {
+        logger.d('Updating highscore...');
+        return updatedScore;
       });
     });
   }
   
   @override
   void initState() {
-    _correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
+    super.initState();
+    correctCount = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('correct') ?? 0;
     });
-    progress = _prefs.then((SharedPreferencesWithCache prefs) {
+    gameProgress = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getDouble('progress') ?? 0.0;
     });
-    super.initState();
+    gameScore = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('score') ?? 0;
+    });
+    gameHighscore = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('highscore') ?? 0;
+    });
   }
 
   void selectFixedPages() {
@@ -207,7 +262,7 @@ class SeriesHomePageState extends State<SeriesHomePage> {
     if (currentIndex < randomPageOrderList.length) {
       increaseProgress(progressForBar);
       currentProgress++;
-      progressForBar = (currentProgress / randomPageOrderList.length);
+      progressForBar = (currentProgress / randomPageOrderList.length).roundToDouble();
       logger.d("Profile for the next page is: ${widget.colorProfile.idKey}, Question Number: $currentProgress, Progress: $progressForBar");
       
 
@@ -236,7 +291,7 @@ class SeriesHomePageState extends State<SeriesHomePage> {
   /// questions than the number defined in MaxQuestCount
   void navigateFixedSeries(int currentIndex) {
     if (currentIndex < fixedPageOrderList.length) {
-      increaseProgress(progressForBar);
+      increaseProgress(progressForBar); 
       currentProgress++;
       progressForBar = currentProgress / fixedPageOrderList.length;
 
@@ -249,13 +304,39 @@ class SeriesHomePageState extends State<SeriesHomePage> {
         navigateFixedSeries(currentIndex + 1);
       });
     } else {
+      // set progress to max
       increaseProgress(1.0);
+      increaseHighScore();
+      endTime = Timestamp.now();
+      logger.i("Stopped quiz timer");
+      writeData();
+
       Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => SeriesEndPage(
           colorProfile: widget.colorProfile, 
-          seriesCount: randomPageOrderList.length,
+          seriesCount: fixedPageOrderList.length,
         ))
       );
+    }
+  }
+
+  Future<void> writeData() async {
+    try {
+      logger.i("Sending game data to database");
+      CollectionReference quizAttempt = FirebaseFirestore.instance.collection("quizAttempts");
+      List<Map<String, dynamic>> collectedData = PageDataManager().allData;
+      // We assume all data is available at this time
+      Map<String, dynamic> quizData = {
+        'startTime': startTime,
+        'submissionTime': endTime,
+        "difficulty": widget.difficultyType.toString(),
+        'questions': collectedData
+      };
+
+      await quizAttempt.add(quizData);
+      logger.i("Data added to firestore...");
+    } catch (e) {
+      logger.e('Error adding data to Firestore: $e');
     }
   }
 
@@ -310,17 +391,18 @@ class SeriesHomePageState extends State<SeriesHomePage> {
                             widget.colorProfile.buttonColor)),
                     onPressed: () {
                       if (widget.difficultyType.equals(DifficultyType.random)) {
-                        // select up to X pages for a random selection
+                        // select up to X pages for a random selection. Dynamically done at user request!
                         selectRandPages();
                       } else {
-                        // select up to X pages for a fixed selection based on difficulty
+                        // select up to X pages for a fixed selection based on difficulty.  Dynamically done at user request!
                         selectFixedPages();
                       }
 
-                      _resetCorrectCount();
+                      resetCorrectCount(); // In case count has something in it
                       try {
-                        if (widget.difficultyType
-                            .equals(DifficultyType.random)) {
+                        startTime = Timestamp.now();
+                        logger.i("Started quiz timer");
+                        if (widget.difficultyType.equals(DifficultyType.random)) {
                           navigateToNextRandom(0);
                         } else {
                           navigateFixedSeries(0);
@@ -345,11 +427,13 @@ class SeriesEndPage extends StatefulWidget {
   const SeriesEndPage({
     super.key, 
     required this.colorProfile,
-    this.seriesCount = 5
+    this.seriesCount = 5,
+    this.showNewScore = false
   });
 
   final ColorProfile colorProfile;
   final int seriesCount;
+  final bool showNewScore;
 
   @override
   State<StatefulWidget> createState() => SeriesEndPageState();
@@ -360,13 +444,14 @@ class SeriesEndPageState extends State<SeriesEndPage> {
   final Future<SharedPreferencesWithCache> _prefs =
     SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct', 'missed', 'mastered_topics', 'weak_topics', 'score'}
+        allowList: <String>{'correct', 'missed', 'mastered_topics', 'weak_topics', 'score', 'highscore'}
       ));
   late Future<int> correctCounter;
   late Future<int> missedCounter;
   late Future<List<String>> masteredTopicList;
   late Future<List<String>> weakTopicList;
   late Future<int> score;
+  late Future<int> highscore;
 
   // handle the end of the series game
   @override
@@ -386,6 +471,9 @@ class SeriesEndPageState extends State<SeriesEndPage> {
     });
     score = _prefs.then((SharedPreferencesWithCache prefs) {
       return prefs.getInt('score') ?? 0;
+    });
+    highscore = _prefs.then((SharedPreferencesWithCache prefs) {
+      return prefs.getInt('highscore') ?? 0;
     });
     super.initState();
   }
@@ -487,43 +575,9 @@ class SeriesEndPageState extends State<SeriesEndPage> {
                               fontSize: 15 + sizeFactor,
                             ),
                           ),
-                          FutureBuilder<List<String>>(
-                            future: weakTopicList, 
-                            builder: (BuildContext context, AsyncSnapshot<List<String>> weaktopicSnapshot) {
-                              switch (weaktopicSnapshot.connectionState) {
-                                case ConnectionState.none:
-                                case ConnectionState.waiting:
-                                  return const CircularProgressIndicator();
-                                case ConnectionState.active:
-                                case ConnectionState.done:
-                                  if (weaktopicSnapshot.hasError) {
-                                    return Text('Error: ${weaktopicSnapshot.error}', style: TextStyle(color: widget.colorProfile.textColor));
-                                  } else {
-                                    return Column(
-                                      children: getSkillLabels(weaktopicSnapshot.data, "Skills that need practice"),
-                                    );
-                                  }
-                              }
-                            }
-                          ),
-                          FutureBuilder<List<String>>(
-                            future: masteredTopicList, 
-                            builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
-                              switch (snapshot.connectionState) {
-                                case ConnectionState.none:
-                                case ConnectionState.waiting:
-                                  return const CircularProgressIndicator();
-                                case ConnectionState.active:
-                                case ConnectionState.done:
-                                  if (snapshot.hasError) {
-                                    return Text('Error: ${snapshot.error}', style: TextStyle(color: widget.colorProfile.textColor));
-                                  } else {
-                                    return Column(
-                                      children: getSkillLabels(snapshot.data, "Mastered Skills"),
-                                    );
-                                  }
-                              }
-                            }
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: widget.showNewScore ? const Text("New highscore acheived!") : Text("Your score: $score")
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),

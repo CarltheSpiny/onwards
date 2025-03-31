@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/game_page.dart';
 import 'package:onwards/pages/components/calculator.dart';
 import 'package:onwards/pages/components/progress_bar.dart';
+import 'package:onwards/pages/components/skip.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
@@ -37,7 +39,8 @@ class FillInActivityScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Fill in the Blank Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [ScoreDisplayAction(), CalcButton()]
+        actions: const [Skip(), ScoreDisplayAction(), CalcButton()],
+        automaticallyImplyLeading: false,
       ),
       body: Container(
         decoration: colorProfile.backBoxDecoration,
@@ -51,6 +54,7 @@ class FillInActivityScreen extends StatelessWidget {
             buttonOptions: randomGameData.optionList,
             colorProfile: colorProfile,
             skills: randomGameData.skills,
+            id: randomGameData.id
           ) :
           GameForm(
             answers: fillBlanksGameData.multiAcceptedAnswers, 
@@ -60,6 +64,7 @@ class FillInActivityScreen extends StatelessWidget {
             buttonOptions: fillBlanksGameData.optionList,
             colorProfile: colorProfile,
             skills: fillBlanksGameData.skills,
+            id: fillBlanksGameData.id
           )
       )
     );
@@ -70,7 +75,7 @@ class FillInActivityScreen extends StatelessWidget {
 // passed from GameData. The idea is to have the game
 // move to the next question after the dialog, using context
 // to pass the info over
-class GameForm extends StatefulWidget {
+class GameForm extends GamePage {
   const GameForm({
     super.key,
     required this.answers, 
@@ -78,153 +83,46 @@ class GameForm extends StatefulWidget {
     required this.blankQuestLabel,
     required this.maxSelectedAnswers,
     required this.buttonOptions,
-    required this.colorProfile,
-    required this.skills
+    super.colorProfile,
+    required this.skills,
+    required this.id
   });
 
-  final ColorProfile colorProfile;
   final String questionLabel;
   final List<String> answers;
   final String blankQuestLabel;
   final int maxSelectedAnswers;
   final List<String> buttonOptions;
   final List<String> skills;
+  final String id;
 
   @override
   GameFormState createState() => GameFormState();
 }
 
-class GameFormState extends State<GameForm> {
+class GameFormState extends GamePageState<GameForm> {
 
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
-  final Future<SharedPreferencesWithCache> _prefs =
-    SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics'}
-      ));
-  late Future<int> correctCounter;
-  late Future<int> missedCounter;
-  late Future<List<String>> masteredTopicList;
-  late Future<List<String>> weakTopicList;
-  late Future<int> themeId;
-  ColorProfile? cachedTheme;
-  // placeholder
-  ColorProfile currentProfile = lightFlavor;
-
-  OverlayEntry? entry;
-  // confetti animation
-  late ConfettiController _bottom_right_controller1;
-  late ConfettiController _bottom_right_controller2;
-  late ConfettiController _bottom_left_controller1;
-  late ConfettiController _bottom_left_controller2;
-  final globalGravity = 0.10;
-  final maxBlastForce = 60.0;
-  final minBlastForce = 50.0;
 
   @override
   void initState() {
-    maxSelection = widget.maxSelectedAnswers;
-    correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('correct') ?? 0;
-    });
-    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('missed') ?? 0;
-    });
-    themeId = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('theme_id') ?? 0;
-    });
-
-    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getStringList('mastered_topics') ?? <String>[];
-    });
-    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getStringList('weak_topics') ?? <String>[];
-    });
-    // confetti controller states
-    _bottom_right_controller1 = ConfettiController(duration: const Duration(seconds: 5));
-    _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
-    _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
-    _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
-    loadTheme();
-    
     super.initState();
+    maxSelection = widget.maxSelectedAnswers;
   }
 
   @override
   void dispose() {
-    _bottom_right_controller1.dispose();
-    _bottom_right_controller2.dispose();
-    _bottom_left_controller1.dispose();
-    _bottom_left_controller2.dispose();
+    logger.i("Finihing up and disposing Typing Game...");
+    // add skills from game for database
+    List<String> currentSkills = [];
+    for (String skill in widget.skills) {
+      currentSkills.add(skill);
+    }
+    setSkills(currentSkills);
+    setQuestionId(widget.id);
     super.dispose();
-  }
-
-  Future<void> loadTheme() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    int? themeIndex = (prefs.getInt('theme_id') ?? 0);
-    setState(() {
-      cachedTheme = _getProfileByIndex(themeIndex);
-      logger.i("Loaded theme: ${cachedTheme?.idKey}");
-    });
-    // check if cached theme is diffrent from the current one
-    if (cachedTheme?.idKey != widget.colorProfile.idKey) {
-      logger.w("Cached theme did not match the current one. Current: ${widget.colorProfile.idKey}, Cached: ${cachedTheme?.idKey}");
-      currentProfile = cachedTheme!;
-    } else {
-      logger.i("Both themes match");
-      currentProfile = widget.colorProfile;
-    }
-  }
-
-  ColorProfile _getProfileByIndex(int index) {
-    switch(index) {
-        case 0:
-          return lightFlavor;
-        case 1:
-          return darkFlavor;
-        case 2:
-          return plainFlavor;
-        case 3:
-          return mintFlavor;
-        case 4:
-          return strawberryFlavor;
-        case 5:
-          return bananaFlavor;
-        case 6:
-          return peanutFlavor;
-        default:
-          return lightFlavor;
-      }
-  }
-
-  Future<void> _incrementCounter() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    final int counter = (prefs.getInt('correct') ?? 0) + 1;
-    setState(() {
-      correctCounter = prefs.setInt('correct', counter).then((_) {
-        logger.i('Updating correct count...');
-        return counter;
-      });
-    });
-  }
-
-  Future<void> addMasteredTopic(String topic) async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
-    if (mastered.contains(topic)) {
-      logger.i("The skill mastery list already contained: $topic");
-      return;
-    } else {
-      mastered.add(topic);
-    }
-
-    setState(() {
-      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
-        return mastered;
-      });
-    });
   }
 
   bool validateAnswer() {
@@ -241,65 +139,6 @@ class GameFormState extends State<GameForm> {
     }
     logger.d("validated answer");
     return isCorrect;
-  }
-
-  Future _showCorrectDialog(bool showOverlay) {
-    List<Widget> answerDialogList = [
-      TextButton(
-        onPressed: () async {
-          _incrementCounter();
-          for (String skill in widget.skills) {
-            addMasteredTopic(skill);
-          }
-          Navigator.pop(context);
-          Navigator.pop(context);
-        }, 
-        child: Text('Continue', 
-          style: TextStyle(
-              color: currentProfile.textColor,
-            ),
-          ),
-      ),
-    ];
-
-    if (showOverlay) {
-      return showDialog(
-        context: context, 
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            actions: answerDialogList,
-            title: Text('Way to go!', 
-            style: TextStyle(
-                color: currentProfile.textColor,
-              ),),
-            backgroundColor: currentProfile.buttonColor,
-          );
-        }
-      );
-    } else {
-      return showDialog(
-        context: context, 
-        barrierDismissible: true,
-        builder: (context) {
-          return AlertDialog(
-            content: Text(
-              "Click any where to return to the problem",
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            title: Text(
-              'Try again...',
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            backgroundColor: currentProfile.buttonColor,
-          );
-        }
-      );
-    }
   }
 
   List<Widget> renderConditionalLabels(List<String> splitter) {
@@ -366,37 +205,11 @@ class GameFormState extends State<GameForm> {
 
   @override
   Widget build(BuildContext context) {
-    
-    void hideOverlay() {
-      entry?.remove();
-      entry = null;
-      _showCorrectDialog(validateAnswer());
-    }
-
-    void showAnimation() {
-      entry = OverlayEntry(
-        builder: (context) => OverlayBanner(
-          onBannerDismissed: () {
-            hideOverlay();
-          },
-        )
-      );
-
-      final overlay = Overlay.of(context);
-      overlay.insert(entry!);
-    }
-
-    void showDisplay() {
-      WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
-        _bottom_left_controller1.play();
-        _bottom_left_controller2.play();
-        _bottom_right_controller1.play();
-        _bottom_right_controller2.play();
-    }
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
     List<Widget> dynamicButtonList = <Widget> [];
     List<String> splitter = widget.blankQuestLabel.split(" ");
+    bool isValid;
 
     for (String option in widget.buttonOptions) {
       ElevatedButton button = ElevatedButton(
@@ -435,65 +248,7 @@ class GameFormState extends State<GameForm> {
       decoration: currentProfile.backBoxDecoration,
       child: Stack(
         children: [
-          Align(
-            alignment: Alignment.bottomRight,
-            child: ConfettiWidget(
-              confettiController: _bottom_right_controller1,
-              blastDirection: (4*pi)/3, // 7 pi /4
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 25,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: ConfettiWidget(
-              confettiController: _bottom_right_controller2,
-              blastDirection: (7*pi)/6, // 7 pi /4
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 50,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: ConfettiWidget(
-              confettiController: _bottom_left_controller1,
-              blastDirection: (11*pi)/6,
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 50,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: ConfettiWidget(
-              confettiController: _bottom_left_controller2,
-              blastDirection: (5*pi)/3,
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 25,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-            ),
-          ),
+          addConfettiBlasters(),
           Align(
             alignment: Alignment.center,
             child: Column(
@@ -542,10 +297,11 @@ class GameFormState extends State<GameForm> {
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: TextButton(
                         onPressed: () => {
-                          if (validateAnswer()) {
-                            showDisplay()
+                          isValid = validateAnswer(),
+                          if (isValid) {
+                            showGameOverlay(-1)
                           } else {
-                            _showCorrectDialog(validateAnswer())
+                            showCorrectDialog(isValid, currentProfile, -1)
                           }
                         }, 
                         style: ButtonStyle(

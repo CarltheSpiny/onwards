@@ -469,7 +469,7 @@ class GameDataBank {
           displayedProblem: "14 x 34 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
-          multiAcceptedAnswers: [["four hundred seventy six"], ["476"]],
+          multiAcceptedAnswers: [["four hundred seventy six"], ["four hundred and seventy six"], ["476"]],
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.1"
         ),
@@ -491,7 +491,7 @@ class GameDataBank {
           displayedProblem: "There are 36,200 pencils on each of 4 shelves at the office supply manufacturer's warehouse. How many pencils are there altogether?", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
-          multiAcceptedAnswers: [["one hundred and forty four thousand eight hundred"], ["144800"], ["one hundred and forty four thousand and eight hundred"]],
+          multiAcceptedAnswers: [["one hundred and forty four thousand eight hundred"], ["144800"], ["one hundred and forty four thousand and eight hundred"], ["one hundred forty four thousand eight hundred"]],
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.4"
         ),
@@ -508,7 +508,7 @@ class GameDataBank {
           displayedProblem: "Laura addresses 127 envelopes every week. Each envelope contains 4 pieces of paper. How many envelopes does Laura address in one year? (There are 52 weeks in a year)", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
-          multiAcceptedAnswers: [["six thousand six hundred and four"], ["6604"]],
+          multiAcceptedAnswers: [["six thousand six hundred and four"], ["6604"], ["six thousand six hundred four"]],
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.6"
         ),
@@ -516,7 +516,7 @@ class GameDataBank {
           displayedProblem: "21 x 11 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
-          multiAcceptedAnswers: [["two hundred thirty one"], ["231"]],
+          multiAcceptedAnswers: [["two hundred thirty one"], ["231"], ["two hundred and thirty one"]],
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.7"
         ),
@@ -531,7 +531,7 @@ class GameDataBank {
         const ReadAloudGameData(
           displayedProblem: "1094 + 4098 = 5192", 
           writtenPrompt: "Read this expression in written form.",
-          multiAcceptedAnswers: [["one thousand and ninety four plus four thousand and nintey eight equals five thousand one hundred and ninety two"]],
+          multiAcceptedAnswers: [["one thousand and ninety four plus four thousand and ninety eight equals five thousand one hundred and ninety two"], ["one thousand ninety four plus four thousand ninety eight equals five thousand one hundred ninety two"]],
            skills: ["four_or_more_place_addition", "self-spoken_written_form"],
           id: "reading.9"
           )
@@ -762,7 +762,7 @@ class GameDataBank {
           ],
           writtenPrompt: 'Answer the short-response question using the blocks below.',
           optionList: [
-            "blocks", "four hundred thirty one", "Franklin", "fourty-three and one", "has", "four thirty one", 
+            "blocks", "four hundred and thirty one", "Franklin", "fourty-three and one", "has", "four thirty one", 
           ],
           id: "jumble.2",
           skills: ["word_problem_written_form", "three_place_addition"]
@@ -785,7 +785,7 @@ class GameDataBank {
             ["six"]
           ],
           optionList: [
-            "seven", "eight", "five", "three", "six", "one", "eight", "nine"
+            "seven", "eight", "five", "three", "six", "one", "nine"
           ],
           writtenPrompt: "Listen to the audio and then create your response with the choices below. Only submit the number.", 
           audioTranscript: 'Five times what number results in thrity?',
@@ -818,17 +818,6 @@ class GameDataBank {
           writtenPrompt: "Type the remaining card amount in standard written form.",
           skills: ["four_or_more_place_addition", "written_form"],
           id: "typing.2"
-        ),
-        const FillBlanksGameData(
-          displayedProblem: 'Sally is 5 years old. Her mother 8 times as old as Sally is. How old is her mother?', 
-          multiAcceptedAnswers: ["forty"], 
-          writtenPrompt: 'Use the options below to answer the word problem.', 
-          blankForm: "Sally's mother is  ____ years old", 
-          optionList: [
-            "eight", "five", "forty", "thrity-two", "forty-eight"
-          ],
-          skills: ["single_digit_addition", "written_form"],
-          id: "fill.1"
         ),
         const FillBlanksGameData(
           displayedProblem: 'Archery Team A hit the target 367 times. Team B hit the target 412 times. How many times did they hit the target?', 
@@ -946,7 +935,7 @@ class GameDataBank {
           displayedProblem: "14 x 34 = ??", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
-          multiAcceptedAnswers: [["four hundred seventy six"], ["476"]],
+          multiAcceptedAnswers: [["four hundred seventy six"], ["four hundred and seventy six"], ["476"]],
           skills: ["two_place_multiplication", "self-spoken_written_form"],
           id: "reading.1"
         ),
@@ -1074,7 +1063,7 @@ class GameDataBank {
           displayedProblem: "There are 36,200 pencils on each of 4 shelves at the office supply manufacturer's warehouse. How many pencils are there altogether?", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the answer, do not repeat the expression.",
-          multiAcceptedAnswers: [["one hundred and forty four thousand eight hundred"], ["144800"], ["one hundred and forty four thousand and eight hundred"]],
+          multiAcceptedAnswers: [["one hundred and forty four thousand eight hundred"], ["144800"], ["one hundred and forty four thousand and eight hundred"], ["one hundred forty four thousand eight hundred"]],
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.4"
         ),
@@ -1130,7 +1119,7 @@ class GameDataBank {
           displayedProblem: "Laura addresses 127 envelopes every week. Each envelope contains 4 pieces of paper. How many envelopes does Laura address in one year? (There are 52 weeks in a year)", 
           writtenPrompt: "What is the product of the following expression?",
           addtionalInstructions: "Only say the product, do not repeat the expression.",
-          multiAcceptedAnswers: [["six thousand six hundred and four"], ["6604"]],
+          multiAcceptedAnswers: [["six thousand six hundred and four"], ["6604"], ["six thousand six hundred four"]],
           skills: ["three_or_more_place_multiplication", "self-spoken_written_form"],
           id: "reading.6"
         ),

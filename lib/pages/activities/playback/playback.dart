@@ -1,19 +1,15 @@
-
-
-import 'dart:math';
-
 import 'package:audioplayers/audioplayers.dart';
-import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:onwards/pages/activities/game_page.dart';
 import 'package:onwards/pages/activities/jumble.dart';
 import 'package:onwards/pages/components/calculator.dart';
 import 'package:onwards/pages/components/progress_bar.dart';
+import 'package:onwards/pages/components/skip.dart';
 import 'package:onwards/pages/constants.dart';
 import 'package:onwards/pages/game_data.dart';
 import 'package:onwards/pages/home.dart';
 import 'package:onwards/pages/score_display.dart';
 import 'package:onwards/pages/tts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const PlaybackGameData dummyData = PlaybackGameData(webAudioLink: "", multiAcceptedAnswers: [], writtenPrompt: "", optionList: [], skills: []);
 
@@ -42,7 +38,8 @@ class PlaybackActivityScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Playback and Answer Game', style: TextStyle(color: colorProfile.textColor)),
         backgroundColor: colorProfile.headerColor,
-        actions: const [ScoreDisplayAction(), CalcButton()]
+        actions: const [Skip(), ScoreDisplayAction(), CalcButton()],
+        automaticallyImplyLeading: false,
       ),
       body: Container(
         decoration: colorProfile.backBoxDecoration,
@@ -57,6 +54,7 @@ class PlaybackActivityScreen extends StatelessWidget {
             showArithmitic: true,
             colorProfile: colorProfile,
             skills: randomData.skills,
+            id: randomData.id
           ) :
           PlaybackGameForm(
             audioSource: AssetSource(playbackGameData.webAudioLink),
@@ -68,6 +66,7 @@ class PlaybackActivityScreen extends StatelessWidget {
             showArithmitic: true,
             colorProfile: colorProfile,
             skills: playbackGameData.skills,
+            id: playbackGameData.id
           ),
       )
     );
@@ -78,7 +77,7 @@ class PlaybackActivityScreen extends StatelessWidget {
 // passed from GameData. The idea is to have the game
 // move to the next question after the dialog, using context
 // to pass the info over
-class PlaybackGameForm extends StatefulWidget {
+class PlaybackGameForm extends GamePage {
   const PlaybackGameForm({
     super.key,
     required this.answers, 
@@ -87,13 +86,13 @@ class PlaybackGameForm extends StatefulWidget {
     required this.buttonOptions,
     required this.titleQuestion,
     required this.showArithmitic,
-    required this.colorProfile,
+    super.colorProfile,
     required this.audioSource,
-    required this.skills
+    required this.skills,
+    required this.id
   });
 
   final AssetSource audioSource;
-  final ColorProfile colorProfile; 
   /// The label for the question, which should be the math form for this game
   final String questionLabel;
   /// The list of combos accepted as answers
@@ -105,142 +104,35 @@ class PlaybackGameForm extends StatefulWidget {
   final String titleQuestion;
   final bool showArithmitic;
   final List<String> skills;
+  final String id;
 
   @override
   PlaybackGameFormState createState() => PlaybackGameFormState();
 }
 
-class PlaybackGameFormState extends State<PlaybackGameForm> {
+class PlaybackGameFormState extends GamePageState<PlaybackGameForm> {
 
   final List<String> _selectedAnswers = [];
   int maxSelection = 0;
   int currentCount = 0;
-  final Future<SharedPreferencesWithCache> _prefs =
-    SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'correct', 'theme_id', 'missed', 'mastered_topics', 'weak_topics'}
-      ));
-  late Future<int> correctCounter;
-  late Future<int> missedCounter;
-  late Future<List<String>> masteredTopicList;
-  late Future<List<String>> weakTopicList;
-  late Future<int> themeId;
-  ColorProfile? cachedTheme;
-  // placeholder
-  ColorProfile currentProfile = lightFlavor;
-
-  OverlayEntry? entry;
-  // confetti animation
-  late ConfettiController _bottom_right_controller1;
-  late ConfettiController _bottom_right_controller2;
-  late ConfettiController _bottom_left_controller1;
-  late ConfettiController _bottom_left_controller2;
-  final globalGravity = 0.10;
-  final maxBlastForce = 60.0;
-  final minBlastForce = 50.0;
 
   @override
   void initState() {
-    maxSelection = widget.maxSelectedAnswers;
-    
-    correctCounter = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('correct') ?? 0;
-    });
-    missedCounter = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('missed') ?? 0;
-    });
-    themeId = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getInt('theme_id') ?? 0;
-    });
-    masteredTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getStringList('mastered_topics') ?? <String>[];
-    });
-    weakTopicList = _prefs.then((SharedPreferencesWithCache prefs) {
-      return prefs.getStringList('weak_topics') ?? <String>[];
-    });
-
-    // confetti controller states
-    _bottom_right_controller1 = ConfettiController(duration: const Duration(seconds: 5));
-    _bottom_right_controller2 = ConfettiController(duration: const Duration(seconds: 5));
-    _bottom_left_controller1 = ConfettiController(duration: const Duration(seconds: 5));
-    _bottom_left_controller2 = ConfettiController(duration: const Duration(seconds: 5));
-    loadTheme();
     super.initState();
+    maxSelection = widget.maxSelectedAnswers;
   }
 
   @override
   void dispose() {
-    _bottom_right_controller1.dispose();
-    _bottom_right_controller2.dispose();
-    _bottom_left_controller1.dispose();
-    _bottom_left_controller2.dispose();
+    logger.i("Finihing up and disposing Typing Game...");
+    // add skills from game for database
+    List<String> currentSkills = [];
+    for (String skill in widget.skills) {
+      currentSkills.add(skill);
+    }
+    setSkills(currentSkills);
+    setQuestionId(widget.id);
     super.dispose();
-  }
-
-  Future<void> loadTheme() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    int? themeIndex = (prefs.getInt('theme_id') ?? 0);
-    setState(() {
-      cachedTheme = _getProfileByIndex(themeIndex);
-      logger.i("Loaded theme: ${cachedTheme?.idKey}");
-    });
-    // check if cached theme is diffrent from the current one
-    if (cachedTheme?.idKey != widget.colorProfile.idKey) {
-      logger.w("Cached theme did not match the current one. Current: ${widget.colorProfile.idKey}, Cached: ${cachedTheme?.idKey}");
-      currentProfile = cachedTheme!;
-    } else {
-      logger.i("Both themes match");
-      currentProfile = widget.colorProfile;
-    }
-  }
-
-  ColorProfile _getProfileByIndex(int index) {
-    switch(index) {
-        case 0:
-          return lightFlavor;
-        case 1:
-          return darkFlavor;
-        case 2:
-          return plainFlavor;
-        case 3:
-          return mintFlavor;
-        case 4:
-          return strawberryFlavor;
-        case 5:
-          return bananaFlavor;
-        case 6:
-          return peanutFlavor;
-        default:
-          return lightFlavor;
-      }
-  }
-
-  Future<void> _incrementCounter() async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    final int counter = (prefs.getInt('correct') ?? 0) + 1;
-    setState(() {
-      correctCounter = prefs.setInt('correct', counter).then((_) {
-        logger.i('Updating correct count...');
-        return counter;
-      });
-    });
-  }
-
-  Future<void> addMasteredTopic(String topic) async {
-    final SharedPreferencesWithCache prefs = await _prefs;
-    final List<String> mastered = (prefs.getStringList('mastered_topics') ?? <String>[]);
-    if (mastered.contains(topic)) {
-      logger.i("The skill mastery list already contained: $topic");
-      return;
-    } else {
-      mastered.add(topic);
-    }
-
-    setState(() {
-      masteredTopicList = prefs.setStringList('mastered_topics', mastered).then((_) {
-        return mastered;
-      });
-    });
   }
 
   /// Validate the current selection against the multiple answers
@@ -254,17 +146,11 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
             logger.d("Validating Answer: Expected ${answerList[i]}");
             isCorrect = false;
             errorIndex = i;
-          } else {
-            // in the case that there are multiple answers, we need to see if the other ones (besides the first) are correct
-            // instead of failing on the first
-            logger.d("Validating Answer: Another answer matched the current assortment");
-            isCorrect = true;
           }
         }
         
         // when we are done going through one answer, if its correct, just skip checking the rest
         if (isCorrect) {
-          logger.i("Not enough answers are selected, could not validate");
           return -1;
         } else {
           return errorIndex;
@@ -283,91 +169,6 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
       logger.d("Cleared answer selection");
       _selectedAnswers.clear();
     });
-  }
-
-  Future _showCorrectDialog(int errorIndex) {
-    List<Widget> answerDialogList = [
-      TextButton(
-        onPressed: () async {
-          _incrementCounter();
-          for (String skill in widget.skills) {
-            addMasteredTopic(skill);
-          }
-          Navigator.pop(context); // dialog
-          Navigator.pop(context); // page
-        }, 
-        child: Text('Continue', 
-          style: TextStyle(
-            color: currentProfile.textColor,
-          ),
-        ),
-      ),
-    ];
-
-    if (errorIndex == -1) {
-      // Show dialog with correct answer
-      return showDialog(
-        context: context, 
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            actions: answerDialogList,
-            title: Text('Way to go!',
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            backgroundColor: currentProfile.buttonColor,
-          );
-        }
-      );
-    } else if (errorIndex == 0) {
-      // Show dialog with error message on too few selected answers
-      return showDialog(
-        context: context, 
-        barrierDismissible: true,
-        builder: (context) {
-          return AlertDialog(
-            content: Text(
-              "Please select more answers",
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            title: Text(
-              'Incomplete Answer',
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            backgroundColor: currentProfile.buttonColor,
-          );
-        }
-      );
-    } else {
-      // Show dialog with location of error
-      return showDialog(
-        context: context, 
-        barrierDismissible: true,
-        builder: (context) {
-          return AlertDialog(
-            content: Text(
-              "Incorrect Answer at ${_selectedAnswers[errorIndex]}",
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            title: Text(
-              'Try again',
-              style: TextStyle(
-                color: currentProfile.textColor
-              ),
-            ),
-            backgroundColor: currentProfile.buttonColor,
-          );
-        }
-      );
-    }
   }
 
   // create a list of widgets that represents the selected button choices
@@ -395,7 +196,7 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
     // List<String> selectedAnswers = [];
     // This is the data of multiple games
     List<Widget> dynamicButtonList = <Widget> [];
-    int valid = 0;
+    int validIndex = 0;
 
     for (String option in widget.buttonOptions) {
       Widget button = Padding(
@@ -419,96 +220,12 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
       dynamicButtonList.add(button);
     }
     
-    void hideOverlay() {
-      entry?.remove();
-      entry = null;
-      _showCorrectDialog(valid);
-    }
-
-    void showAnimation() {
-      entry = OverlayEntry(
-        builder: (context) => OverlayBanner(
-          onBannerDismissed: () {
-            hideOverlay();
-          },
-        )
-      );
-
-      final overlay = Overlay.of(context);
-      overlay.insert(entry!);
-    }
-
-  void showDisplay() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => showAnimation());
-      _bottom_left_controller1.play();
-      _bottom_left_controller2.play();
-      _bottom_right_controller1.play();
-      _bottom_right_controller2.play();
-  }
     // Render the form here
     return Container(
       decoration: currentProfile.backBoxDecoration,
       child: Stack(
         children: [
-          Align(
-            alignment: Alignment.bottomRight,
-            child: ConfettiWidget(
-              confettiController: _bottom_right_controller1,
-              blastDirection: (4*pi)/3, // 7 pi /4
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 25,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: ConfettiWidget(
-              confettiController: _bottom_right_controller2,
-              blastDirection: (7*pi)/6, // 7 pi /4
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 50,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: ConfettiWidget(
-              confettiController: _bottom_left_controller1,
-              blastDirection: (11*pi)/6,
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 50,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: ConfettiWidget(
-              confettiController: _bottom_left_controller2,
-              blastDirection: (5*pi)/3,
-              emissionFrequency: 0.000001,
-              particleDrag: 0.05,
-              numberOfParticles: 25,
-              gravity: globalGravity,
-              minBlastForce: minBlastForce,
-              maxBlastForce: maxBlastForce,
-              shouldLoop: false,
-            ),
-          ),
+          addConfettiBlasters(),
           Align(
             alignment: Alignment.center,
             child: Padding(
@@ -523,7 +240,6 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                       ),
                       textAlign: TextAlign.center,
                   ),
-                
                   TTSRunner(voiceLine: widget.questionLabel),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -551,11 +267,11 @@ class PlaybackGameFormState extends State<PlaybackGameForm> {
                     children: [
                       TextButton(
                         onPressed: _selectedAnswers.isEmpty ? null : () => {
-                          valid = validateAnswer(),
-                          if (valid < 0) {
-                            showDisplay()
+                          validIndex = validateAnswer(),
+                          if (validIndex < 0) {
+                            showGameOverlay(validIndex)
                           } else {
-                            _showCorrectDialog(valid)
+                            showCorrectDialog(validIndex < 0, currentProfile, validIndex)
                           }
                         }, 
                         style: ButtonStyle(
